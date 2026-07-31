@@ -650,22 +650,34 @@ function pintarLista(ol, lista) {
   });
 }
 
-/** Noz de premiação em ouro, prata ou bronze — o mascote da Skeelo virou medalha. */
+/** Noz de premiação em ouro, prata ou bronze — gordinha, redonda e sorridente. */
 function noz(idx) {
   const tom = [
-    { cupula: '#c98a00', corpo: '#ffd04d', luz: '#fff0b0' },   // ouro
-    { cupula: '#8e99a6', corpo: '#dfe6ee', luz: '#ffffff' },   // prata
-    { cupula: '#94531f', corpo: '#d8894a', luz: '#f3c091' },   // bronze
+    { cupula: '#c98a00', aba: '#e0a300', corpo: '#ffd04d', luz: '#fff6cf' },  // ouro
+    { cupula: '#8e99a6', aba: '#a9b4c0', corpo: '#e6ecf3', luz: '#ffffff' },  // prata
+    { cupula: '#8f4f1d', aba: '#a95f24', corpo: '#dd9257', luz: '#f8d4ae' },  // bronze
   ][idx];
   return (
-    `<svg class="noz" viewBox="0 0 64 78" aria-hidden="true">` +
-      `<rect x="29" y="0" width="6" height="11" rx="3" fill="${tom.cupula}"/>` +
-      `<path d="M13 32 C13 58 21 74 32 76 C43 74 51 58 51 32 Z" fill="${tom.corpo}"/>` +
-      `<ellipse cx="23" cy="47" rx="4.5" ry="9" fill="${tom.luz}" opacity=".45"/>` +
-      `<path d="M8 32 C8 16 19 8 32 8 C45 8 56 16 56 32 Z" fill="${tom.cupula}"/>` +
-      `<path d="M8 32 C8 16 19 8 32 8 C45 8 56 16 56 32 Z" fill="${tom.luz}" opacity=".18"/>` +
-      `<text x="32" y="59" text-anchor="middle" font-size="23" font-weight="700" ` +
-        `font-family="Fredoka, sans-serif" fill="#fff">${idx + 1}</text>` +
+    '<svg class="noz" viewBox="0 0 88 100" aria-hidden="true">' +
+      // cabinho
+      `<path d="M44 2 C49 2 52 7 50 13 L38 13 C36 7 39 2 44 2 Z" fill="${tom.cupula}"/>` +
+      // corpo bem redondo, com a barriguinha passando da cúpula
+      `<circle cx="44" cy="62" r="32" fill="${tom.corpo}"/>` +
+      `<path d="M44 90 C48 90 50 95 44 98 C38 95 40 90 44 90 Z" fill="${tom.corpo}"/>` +
+      // brilho do corpo
+      `<ellipse cx="31" cy="56" rx="8" ry="12" fill="${tom.luz}" opacity=".5" ` +
+        'transform="rotate(-18 31 56)"/>' +
+      `<circle cx="58" cy="76" r="4" fill="${tom.luz}" opacity=".3"/>` +
+      // cúpula fofa, abaulada e com aba arredondada
+      `<path d="M9 42 C9 22 24 11 44 11 C64 11 79 22 79 42 C79 47 75 50 70 50 ` +
+        `L18 50 C13 50 9 47 9 42 Z" fill="${tom.cupula}"/>` +
+      `<path d="M9 42 C9 22 24 11 44 11 C64 11 79 22 79 42 C79 44 78 45 76 46 ` +
+        `C74 28 61 19 44 19 C27 19 14 28 12 46 C10 45 9 44 9 42 Z" fill="${tom.aba}"/>` +
+      `<ellipse cx="32" cy="27" rx="13" ry="6" fill="#fff" opacity=".26" ` +
+        'transform="rotate(-14 32 27)"/>' +
+      // número na barriga
+      `<text x="44" y="76" text-anchor="middle" font-size="27" font-weight="700" ` +
+        `font-family="Fredoka, sans-serif" fill="#fff" opacity=".95">${idx + 1}</text>` +
     '</svg>'
   );
 }
