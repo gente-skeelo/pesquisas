@@ -22,14 +22,14 @@
   --rosa:    #e85d7e;
 
   /* alternativas em pastel, no tom dos chips do Career Hub */
-  --op0: #fbcfdd;
-  --op1: #c7e2fb;
-  --op2: #fde6a8;
-  --op3: #bdf0d4;
-  --tinta-op0: #0d2818;
-  --tinta-op1: #0d2818;
+  --op0: #e8455f;
+  --op1: #2196f3;
+  --op2: #f5a623;
+  --op3: #00b871;
+  --tinta-op0: #ffffff;
+  --tinta-op1: #ffffff;
   --tinta-op2: #0d2818;
-  --tinta-op3: #0d2818;
+  --tinta-op3: #ffffff;
 
   --sombra:  0 4px 16px rgba(12, 50, 33, .07);
   --sombra2: 0 14px 34px rgba(12, 50, 33, .13);
@@ -249,29 +249,30 @@ p { line-height: 1.55; }
   gap: .9rem;
   min-height: 88px;
   padding: 1rem 1.2rem;
-  background: #fff;
-  border: 1.5px solid var(--borda);
+  background: var(--cor);
+  border: 0;
   border-radius: 16px;
-  color: var(--tinta);
+  color: var(--sobre, var(--tinta));
   cursor: pointer;
   box-shadow: var(--sombra);
   transition: transform .12s ease, opacity .2s ease, box-shadow .2s ease, border-color .12s ease;
 }
-.opcao::before {                      /* barra colorida à esquerda */
+/* brilho suave no topo, pra dar volume ao bloco */
+.opcao::before {
   content: '';
   position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 5px;
-  border-radius: 16px 0 0 16px;
-  background: var(--cor);
+  inset: 0 0 58%;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(rgba(255, 255, 255, .2), transparent);
+  pointer-events: none;
 }
 .opcao .forma {
-  width: 38px; height: 38px;
-  border-radius: 11px;
+  width: 40px; height: 40px;
+  border-radius: 12px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--cor);
-  font-size: 1.05rem;
-  color: rgba(13, 40, 24, .55);
+  background: rgba(255, 255, 255, .28);
+  font-size: 1.15rem;
+  color: inherit;
   flex: none;
 }
 .opcao[data-i="0"] { --cor: var(--op0); --sobre: var(--tinta-op0); }
@@ -286,8 +287,7 @@ p { line-height: 1.55; }
 .opcao:disabled { cursor: default; }
 .opcao.apagada { opacity: .38; }
 .opcao.certa {
-  border-color: var(--skeelo);
-  box-shadow: 0 0 0 3px rgba(0, 200, 83, .28), var(--sombra2);
+  box-shadow: 0 0 0 4px #fff, 0 0 0 8px var(--skeelo), var(--sombra2);
 }
 
 .barra-tempo {

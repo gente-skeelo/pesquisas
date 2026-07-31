@@ -151,7 +151,7 @@ try {
   host.quizCheio = null;
   host.envia({ t: 'pegarQuiz', id: idCorRuim });
   await host.ate((c) => c.quizCheio, 'quiz de cor inválida');
-  conferir('cor inválida cai no padrão pastel', host.quizCheio.cores[0] === '#fbcfdd', host.quizCheio.cores[0]);
+  conferir('cor inválida cai na paleta padrão', host.quizCheio.cores[0] === '#e8455f', host.quizCheio.cores[0]);
   host.envia({ t: 'excluirQuiz', id: idCorRuim });
   await host.ate((c) => c.estado.quizzes.every((q) => q.id !== idCorRuim), 'limpeza');
   host.quizCheio = null;

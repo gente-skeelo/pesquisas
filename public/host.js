@@ -23,6 +23,11 @@ const T = {
     placar: 'Ver placar',
     proxima: 'Próxima pergunta',
     encerrar: 'Encerrar e premiar',
+    mostrarPodio: '🏆 Mostrar o pódio',
+    tambores: 'E o pódio é…',
+    chamada: (p) => `${p}º lugar…`,
+    campeao: 'Campeã(o)!',
+    demais: 'Restante do placar',
     jogarDeNovo: 'Jogar de novo',
     menu: 'Menu',
     naSala: (n) => `${n} na sala`,
@@ -49,6 +54,11 @@ const T = {
     placar: 'Show standings',
     proxima: 'Next question',
     encerrar: 'Finish and crown',
+    mostrarPodio: '🏆 Show the podium',
+    tambores: 'And the podium is…',
+    chamada: (p) => `In ${p}${p === 1 ? 'st' : p === 2 ? 'nd' : 'rd'} place…`,
+    campeao: 'Champion!',
+    demais: 'Rest of the leaderboard',
     jogarDeNovo: 'Play again',
     menu: 'Menu',
     naSala: (n) => `${n} in the room`,
@@ -211,8 +221,17 @@ function pintar(e) {
     $('curiosidade').hidden = !revelando || !e.curiosidade;
     $('curiosidade').textContent = e.curiosidade || '';
 
-    principal.textContent = revelando ? t.placar : t.revelar;
-    principal.onclick = () => enviar({ t: revelando ? 'placar' : 'revelar' });
+    const ultima = e.q + 1 >= e.total;
+    if (!revelando) {
+      principal.textContent = t.revelar;
+      principal.onclick = () => enviar({ t: 'revelar' });
+    } else if (ultima) {
+      principal.textContent = t.mostrarPodio;
+      principal.onclick = () => enviar({ t: 'encerrar' });
+    } else {
+      principal.textContent = t.placar;
+      principal.onclick = () => enviar({ t: 'placar' });
+    }
     return mostrar('jogo');
   }
 
@@ -225,6 +244,7 @@ function pintar(e) {
   }
 
   if (e.fase === 'fim') {
+    $('h-demais').textContent = t.demais;
     montarFesta(e);
     principal.textContent = t.jogarDeNovo;
     principal.onclick = () => enviar({ t: 'reiniciar' });
@@ -630,46 +650,86 @@ function pintarLista(ol, lista) {
   });
 }
 
-/* pódio estilo Kahoot: 3º sobe, depois 2º, depois 1º com coroa e confete */
+/** Noz de premiação em ouro, prata ou bronze — o mascote da Skeelo virou medalha. */
+function noz(idx) {
+  const tom = [
+    { cupula: '#c98a00', corpo: '#ffd04d', luz: '#fff0b0' },   // ouro
+    { cupula: '#8e99a6', corpo: '#dfe6ee', luz: '#ffffff' },   // prata
+    { cupula: '#94531f', corpo: '#d8894a', luz: '#f3c091' },   // bronze
+  ][idx];
+  return (
+    `<svg class="noz" viewBox="0 0 64 78" aria-hidden="true">` +
+      `<rect x="29" y="0" width="6" height="11" rx="3" fill="${tom.cupula}"/>` +
+      `<path d="M13 32 C13 58 21 74 32 76 C43 74 51 58 51 32 Z" fill="${tom.corpo}"/>` +
+      `<ellipse cx="23" cy="47" rx="4.5" ry="9" fill="${tom.luz}" opacity=".45"/>` +
+      `<path d="M8 32 C8 16 19 8 32 8 C45 8 56 16 56 32 Z" fill="${tom.cupula}"/>` +
+      `<path d="M8 32 C8 16 19 8 32 8 C45 8 56 16 56 32 Z" fill="${tom.luz}" opacity=".18"/>` +
+      `<text x="32" y="59" text-anchor="middle" font-size="23" font-weight="700" ` +
+        `font-family="Fredoka, sans-serif" fill="#fff">${idx + 1}</text>` +
+    '</svg>'
+  );
+}
+
+/* Pódio com suspense: cada lugar é chamado, sobe e só então revela o nome. */
 function montarFesta(e) {
   if (festaMontada) return;
   festaMontada = true;
 
+  const t = T[idioma];
   const palco = $('podio-palco');
   palco.innerHTML = '';
   const top = e.ranking.slice(0, 3);
+
+  $('h-fim').textContent = t.tambores;
+  $('podio').innerHTML = '';
+  $('podio-resto').hidden = true;
 
   [1, 0, 2].forEach((idx) => {                       // exibição: 2º | 1º | 3º
     if (!top[idx]) return;
     const col = document.createElement('div');
     col.className = 'coluna c' + (idx + 1);
     col.innerHTML =
-      '<div class="coroa">👑</div><div class="avatar"></div><div class="quem"></div>' +
-      '<div class="qtd">0</div><div class="bloco"></div>';
-    if (idx !== 0) col.querySelector('.coroa').textContent = '';
-    col.querySelector('.avatar').textContent = top[idx].nome.trim().charAt(0).toUpperCase();
+      '<div class="coroa">👑</div>' +
+      `<div class="medalha">${noz(idx)}</div>` +
+      '<div class="quem"></div>' +
+      '<div class="qtd">0</div>' +
+      '<div class="bloco"><span class="interrog">?</span></div>';
     col.querySelector('.quem').textContent = top[idx].nome;
     col.querySelector('.qtd').dataset.alvo = top[idx].pontos;
-    col.querySelector('.bloco').textContent = idx + 1;
     palco.appendChild(col);
   });
-
-  pintarLista($('podio'), e.ranking.slice(3));       // do 4º em diante
 
   const revelar = (idx) => {
     const col = palco.querySelector('.c' + (idx + 1));
     if (!col) return;
+    $('h-fim').textContent = idx === 0 ? t.campeao : t.chamada(idx + 1);
     col.classList.add('sobe');
     contarAte(col.querySelector('.qtd'));
-    confete.estourar({ 0: 0.5, 1: 0.32, 2: 0.68 }[idx], 0.45, idx === 0 ? 170 : 70);
+
     if (idx === 0) {
-      timersFesta.push(setTimeout(() => confete.estourar(0.15, 0.3, 90), 450));
-      timersFesta.push(setTimeout(() => confete.estourar(0.85, 0.3, 90), 900));
+      confete.estourar(0.5, 0.45, 200);
+      confete.chover(9);                              // papelzinhos caindo na tela
+      timersFesta.push(setTimeout(() => confete.estourar(0.16, 0.32, 110), 420));
+      timersFesta.push(setTimeout(() => confete.estourar(0.84, 0.32, 110), 820));
+      timersFesta.push(setTimeout(() => {
+        $('h-fim').textContent = t.fim;
+        if (e.ranking.length > 3) {
+          pintarLista($('podio'), e.ranking.slice(3));
+          $('podio-resto').hidden = false;
+        }
+      }, 2600));
+    } else {
+      confete.estourar({ 1: 0.3, 2: 0.7 }[idx], 0.5, 80);
     }
   };
-  timersFesta.push(setTimeout(() => revelar(2), 500));
-  timersFesta.push(setTimeout(() => revelar(1), 1700));
-  timersFesta.push(setTimeout(() => revelar(0), 3100));
+
+  /* chamada → suspense → revelação, do bronze ao ouro */
+  timersFesta.push(setTimeout(() => { $('h-fim').textContent = t.chamada(3); }, 500));
+  timersFesta.push(setTimeout(() => revelar(2), 1800));
+  timersFesta.push(setTimeout(() => { $('h-fim').textContent = t.chamada(2); }, 3600));
+  timersFesta.push(setTimeout(() => revelar(1), 4900));
+  timersFesta.push(setTimeout(() => { $('h-fim').textContent = t.chamada(1); }, 6700));
+  timersFesta.push(setTimeout(() => revelar(0), 8200));
 }
 
 function desmontarFesta() {
@@ -678,6 +738,7 @@ function desmontarFesta() {
   timersFesta.forEach(clearTimeout);
   timersFesta = [];
   confete.parar();
+  $('podio-resto').hidden = true;
 }
 
 function contarAte(el) {

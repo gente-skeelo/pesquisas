@@ -34,7 +34,7 @@ const BONUS_SERIE_MAX = 500;  // teto do bonus de sequencia
 const novoPin = () => String(Math.floor(100000 + Math.random() * 900000));
 
 const IDIOMAS = ['pt', 'en', 'es'];
-const CORES_PADRAO = ['#fbcfdd', '#c7e2fb', '#fde6a8', '#bdf0d4'];
+const CORES_PADRAO = ['#e8455f', '#2196f3', '#f5a623', '#00b871'];
 const ehHex = (c) => /^#[0-9a-fA-F]{6}$/.test(String(c || ''));
 
 /* ---------- estado da partida ---------- */

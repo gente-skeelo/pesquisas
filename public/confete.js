@@ -19,7 +19,7 @@ window.Confete = function (canvas) {
     for (const p of pecas) {
       p.vx *= 0.99;
       p.vy += p.g;
-      p.x += p.vx;
+      p.x += p.vx + Math.sin((p.vida + p.h) / 18) * 0.6 * devicePixelRatio;  // balanço
       p.y += p.vy;
       p.rot += p.vr;
       p.vida--;
@@ -66,7 +66,36 @@ window.Confete = function (canvas) {
     }
   }
 
-  return { estourar, parar: () => { pecas = []; } };
+  /* Chuva de papelzinhos caindo do alto da tela, por alguns segundos. */
+  function chover(segundos = 6) {
+    ajustar();
+    const fim = performance.now() + segundos * 1000;
+    (function solta(agora) {
+      if (agora > fim) return;
+      for (let i = 0; i < 5; i++) {
+        pecas.push({
+          x: Math.random() * canvas.width,
+          y: -20 * devicePixelRatio,
+          vx: (Math.random() - 0.5) * 1.6 * devicePixelRatio,
+          vy: (1.2 + Math.random() * 2.2) * devicePixelRatio,
+          g: 0.02 * devicePixelRatio,
+          w: (5 + Math.random() * 6) * devicePixelRatio,
+          h: (8 + Math.random() * 9) * devicePixelRatio,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.22,
+          cor: CORES[(Math.random() * CORES.length) | 0],
+          vida: 600,
+        });
+      }
+      if (!rodando) {
+        rodando = true;
+        requestAnimationFrame(passo);
+      }
+      requestAnimationFrame(solta);
+    })(performance.now());
+  }
+
+  return { estourar, chover, parar: () => { pecas = []; } };
 };
 
 /* Glitter ambiente: estrelinhas cintilando espalhadas pela tela.

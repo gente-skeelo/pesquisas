@@ -24,7 +24,8 @@ No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
 
 1. **Central de quizzes** — cards com os quizzes salvos: ▶ Apresentar, Editar, Duplicar,
    ✕ Excluir, ou ＋ Novo quiz.
-2. **Editor** — título, emoji, **paleta das alternativas** (5 presets ou 4 cores livres,
+2. **Editor** — título, emoji, **paleta das alternativas** (padrão nas cores vivas estilo
+   Kahoot; 5 presets ou 4 cores livres,
    com prévia e cor de texto calculada automaticamente pelo contraste) e as perguntas:
    enunciado, 4 alternativas (✓ marca a correta), tempo, curiosidade opcional e versões
    em **inglês e espanhol** — manuais ou por **tradução automática**. Sem tradução, a
@@ -33,8 +34,12 @@ No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
    quem já chegou (clique num nome pra remover a pessoa). Cada partida gera um PIN novo.
 4. **Partida** — botão principal (ou barra de espaço) conduz: Revelar → Placar → Próxima.
    Seletor PT/EN/ES ao vivo no canto.
-5. **Fim** — pódio animado (3º, 2º, 1º com coroa e confete), "Jogar de novo" repete o
-   mesmo quiz com a sala mantida; "Menu" volta pra central.
+5. **Fim** — na revelação da última pergunta o botão vira **"🏆 Mostrar o pódio"** (sem
+   passar pela lista). O pódio é encenado: os três blocos começam como tocos com "?", cada
+   lugar é chamado ("3º lugar…"), sobe com sua **noz** de bronze / prata / ouro, o nome
+   aparece e os pontos contam. No campeão caem papelzinhos pela tela inteira e a coroa
+   desce; só então o restante do placar aparece. "Jogar de novo" repete o mesmo quiz com a
+   sala mantida; "Menu" volta pra central.
 
 ### Pontuação
 
