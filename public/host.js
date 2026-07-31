@@ -33,6 +33,7 @@ const T = {
     naSala: (n) => `${n} na sala`,
     confirmaMenu: 'Voltar ao menu? A partida atual é encerrada.',
     caiu: 'Conexão caiu. Reconectando…',
+    som: (on) => (on ? '🔊 Som' : '🔇 Som'),
   },
   en: {
     aponte: 'Or point your phone camera',
@@ -64,6 +65,7 @@ const T = {
     naSala: (n) => `${n} in the room`,
     confirmaMenu: 'Back to the menu? The current game ends.',
     caiu: 'Connection dropped. Reconnecting…',
+    som: (on) => (on ? '🔊 Sound' : '🔇 Sound'),
   },
   es: {
     aponte: 'O apunta la cámara del móvil',
@@ -95,6 +97,7 @@ const T = {
     naSala: (n) => `${n} en la sala`,
     confirmaMenu: '¿Volver al menú? La partida actual termina.',
     caiu: 'Se cayó la conexión. Reconectando…',
+    som: (on) => (on ? '🔊 Sonido' : '🔇 Sonido'),
   },
 };
 
@@ -112,6 +115,7 @@ let radioSeq = 0;
 let coresEditor = [];   // preenchido ao abrir o editor (PALETAS é declarado adiante)
 let podeTraduzir = false;
 let traduzindo = null;
+let ultimoTique = -1;
 const confete = Confete($('confete'));
 
 function mostrar(qual) {
@@ -187,6 +191,7 @@ function pintar(e) {
   $('h-lideres').textContent = t.lideres;
   $('h-fim').textContent = t.fim;
   $('bt-menu').textContent = t.menu;
+  $('bt-som').textContent = t.som(Musica.estaLigado());
   $('situacao').textContent = t.naSala(e.jogadores.length);
 
   const principal = $('bt-principal');
@@ -196,6 +201,7 @@ function pintar(e) {
   podeTraduzir = !!e.podeTraduzir;
   aplicarCores(e.cores);
   document.body.classList.toggle('festa', e.fase !== 'menu');
+  trilha(e);
 
   if (e.fase === 'menu') {
     pintarMenu(e);
@@ -281,6 +287,36 @@ function pintar(e) {
     principal.onclick = () => enviar({ t: 'reiniciar' });
     return mostrar('fim');
   }
+}
+
+/** Liga a trilha à fase da partida — sem reiniciar o loop a cada repintura. */
+let cenaAnterior = '';
+function trilha(e) {
+  const anterior = cenaAnterior;
+  cenaAnterior = e.fase;
+  if (e.fase === 'menu' || e.fase === 'lobby') {
+    Musica.cena(e.fase === 'lobby' ? 'lobby' : '');
+    if (e.fase === 'menu') Musica.parar();
+    ultimoTique = -1;
+    return;
+  }
+
+  if (e.fase === 'pergunta') {
+    Musica.cena('pergunta');
+    const faltam = Math.ceil(e.restante / 1000);          // contagem nos 5 finais
+    if (faltam <= 5 && faltam >= 1 && faltam !== ultimoTique) {
+      ultimoTique = faltam;
+      Musica.tique(faltam);
+    }
+    return;
+  }
+
+  ultimoTique = -1;
+  if (e.fase === 'revelacao') {
+    if (anterior !== 'revelacao') Musica.revelacao();
+  }
+  else if (e.fase === 'placar') Musica.cena('placar');
+  else if (e.fase === 'fim') Musica.parar();
 }
 
 /* ---------- menu ---------- */
@@ -748,6 +784,7 @@ function montarFesta(e) {
     $('h-fim').textContent = idx === 0 ? t.campeao : t.chamada(idx + 1);
     col.classList.add('sobe');
     contarAte(col.querySelector('.qtd'));
+    Musica.fanfarra(idx);
 
     if (idx === 0) {
       confete.estourar(0.5, 0.45, 200);
@@ -767,11 +804,17 @@ function montarFesta(e) {
   };
 
   /* chamada → suspense → revelação, do bronze ao ouro */
-  timersFesta.push(setTimeout(() => { $('h-fim').textContent = t.chamada(3); }, 500));
+  const chamar = (pos, quando) => {
+    timersFesta.push(setTimeout(() => {
+      $('h-fim').textContent = t.chamada(pos);
+      Musica.rufar(1.1);
+    }, quando));
+  };
+  chamar(3, 500);
   timersFesta.push(setTimeout(() => revelar(2), 1800));
-  timersFesta.push(setTimeout(() => { $('h-fim').textContent = t.chamada(2); }, 3600));
+  chamar(2, 3600);
   timersFesta.push(setTimeout(() => revelar(1), 4900));
-  timersFesta.push(setTimeout(() => { $('h-fim').textContent = t.chamada(1); }, 6700));
+  chamar(1, 6700);
   timersFesta.push(setTimeout(() => revelar(0), 8200));
 }
 
@@ -812,6 +855,10 @@ function montarOpcoes(e) {
 /* ---------- barra ---------- */
 
 ['pt', 'en', 'es'].forEach((v) => { $('bt-' + v).onclick = () => enviar({ t: 'idioma', v }); });
+$('bt-som').onclick = () => {
+  Musica.acordar();
+  $('bt-som').textContent = T[idioma].som(Musica.alternar());
+};
 $('bt-menu').onclick = () => {
   if (confirm(T[idioma].confirmaMenu)) enviar({ t: 'menu' });
 };

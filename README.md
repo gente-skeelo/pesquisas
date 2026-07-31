@@ -80,6 +80,26 @@ Anthropic (`claude-opus-5`, saída estruturada por JSON Schema) e devolve as alt
 **na mesma ordem**, para o índice do gabarito continuar valendo. Sem a chave, nada quebra:
 o botão avisa que o recurso está desligado e a tradução manual segue disponível.
 
+## Trilha sonora
+
+Sintetizada na hora com WebAudio (`public/musica.js`) — não há arquivo de áudio no
+repositório, então nada pesa no carregamento e não há licença envolvida. Toca **só na tela
+do apresentador**, que é quem está ligada na caixa de som; os celulares ficam mudos de
+propósito.
+
+| Momento | O que toca |
+| --- | --- |
+| Lobby | arpejo leve em pentatônica, de fundo |
+| Pergunta | pulso constante com percussão |
+| Últimos 5 segundos | tique agudo por segundo, subindo de tom |
+| Revelação | acorde curto |
+| Placar parcial | motivo de três notas |
+| Pódio | rufar de tambores antes de cada chamada e fanfarra na revelação — maior no campeão |
+
+O botão **🔊 Som** na barra de controle liga e desliga, e a escolha fica salva no
+navegador. Navegador só libera áudio depois de um clique: o primeiro clique do
+apresentador já resolve isso.
+
 ## Idiomas
 
 Português, inglês e espanhol, trocados ao vivo pelo apresentador. A interface das duas

@@ -40,6 +40,7 @@
       z-index: 40;
     }
     .barra-controle .esquerda { margin-right: auto; display: flex; gap: 10px; align-items: center; }
+    #bt-som { padding: .5rem .9rem; font-size: .9rem; }
     .barra-controle.escondida { display: none; }
 
     .seletor { display: inline-flex; border: 1px solid var(--borda); border-radius: 12px; overflow: hidden; background: #fff; }
@@ -549,6 +550,7 @@
         <button id="bt-en">EN</button>
         <button id="bt-es">ES</button>
       </div>
+      <button class="botao fantasma" id="bt-som" title="Ligar/desligar a trilha">🔊 Som</button>
       <span class="discreto" id="situacao"></span>
     </div>
     <button class="botao fantasma" id="bt-menu">Menu</button>
@@ -558,6 +560,7 @@
   <canvas id="confete" aria-hidden="true"></canvas>
 
   <script>window.CHAVE = decodeURIComponent('__CHAVE__');</script>
+  <script src="/musica.js"></script>
   <script src="/confete.js"></script>
   <script src="/host.js"></script>
 </body>

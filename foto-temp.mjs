@@ -5,48 +5,58 @@ const host = new WebSocket('ws://127.0.0.1:4477/ws');
 const idQuiz = await new Promise((ok) => {
   host.on('open', () => {
     host.send(JSON.stringify({ t: 'host', k: 'foto' }));
-    host.send(JSON.stringify({ t: 'salvarQuiz', quiz: {
-      titulo: 'Idiomas', emoji: '🌎',
-      cartas: [{ segundos: 60, correta: 0,
-        pt: { enunciado: 'Qual é a capital do Peru?', opcoes: ['Lima', 'Quito', 'La Paz', 'Bogotá'], curiosidade: '' },
-        en: { enunciado: 'What is the capital of Peru?', opcoes: ['Lima', 'Quito', 'La Paz', 'Bogotá'], curiosidade: '' },
-        es: { enunciado: '¿Cuál es la capital de Perú?', opcoes: ['Lima', 'Quito', 'La Paz', 'Bogotá'], curiosidade: '' } }],
-    } }));
+    host.send(JSON.stringify({ t: 'salvarQuiz', quiz: { titulo: 'Som', emoji: '🎵',
+      cartas: [{ segundos: 8, correta: 0, pt: { enunciado: 'Toca música?', opcoes: ['Sim','Não','Talvez','Quem sabe'], curiosidade: '' } }] } }));
   });
   host.on('message', (m) => { const d = JSON.parse(m); if (d.t === 'salvo') ok(d.id); });
 });
 
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({
+  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  args: ['--autoplay-policy=no-user-gesture-required'],
+});
 const erros = [];
-const h = await b.newPage({ viewport: { width: 1280, height: 800 } });
-h.on('pageerror', (e) => erros.push('host: ' + e.message));
-await h.goto('http://127.0.0.1:4477/host?k=foto', { waitUntil: 'networkidle' });
-await h.waitForTimeout(900);
+const p = await b.newPage({ viewport: { width: 1280, height: 800 } });
+p.on('pageerror', (e) => erros.push(e.message));
+
+// conta cada som agendado, antes da página rodar
+await p.addInitScript(() => {
+  window.__sons = 0;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const osc = AC.prototype.createOscillator;
+  const buf = AC.prototype.createBufferSource;
+  AC.prototype.createOscillator = function () { window.__sons++; return osc.call(this); };
+  AC.prototype.createBufferSource = function () { window.__sons++; return buf.call(this); };
+});
+
+await p.goto('http://127.0.0.1:4477/host?k=foto', { waitUntil: 'networkidle' });
+await p.waitForTimeout(800);
 host.send(JSON.stringify({ t: 'abrirQuiz', id: idQuiz }));
-await h.waitForTimeout(600);
-const pin = await h.textContent('#pin-grande');
+await p.waitForTimeout(700);
+const pin = await p.textContent('#pin-grande');
 
-const c = await b.newPage({ viewport: { width: 420, height: 780 } });
-c.on('pageerror', (e) => erros.push('jogador: ' + e.message));
-await c.goto('http://127.0.0.1:4477/?pin=' + pin, { waitUntil: 'networkidle' });
-await c.waitForTimeout(600);
-await c.fill('#nome', 'Ana');
-await c.click('#bt-entrar');
-await c.waitForTimeout(700);
-await h.click('#bt-principal');
-await h.waitForTimeout(800);
+const j = new WebSocket('ws://127.0.0.1:4477/ws');
+await new Promise((ok) => { j.on('open', () => { j.send(JSON.stringify({ t: 'entrar', nome: 'Ana', pin })); ok(); }); });
+await p.waitForTimeout(600);
 
-for (const [lang, arquivo] of [['es', 'i-es'], ['en', 'i-en'], ['pt', 'i-pt']]) {
-  await h.click('#bt-' + lang);
-  await h.waitForTimeout(900);
-  const enunH = (await h.textContent('#enunciado')).trim();
-  const enunC = (await c.textContent('#enunciado')).trim();
-  const idx = (await h.textContent('#idx')).trim();
-  const resp = (await h.textContent('#respondidos')).trim();
-  const bt = (await h.textContent('#bt-principal')).trim();
-  console.log(`[${lang}] host: "${idx}" · "${resp}" · botão "${bt}"`);
-  console.log(`     enunciado host: "${enunH}" | jogador: "${enunC}"`);
-  if (lang === 'es') await h.screenshot({ path: dir + '/' + arquivo + '.png' });
-}
+const conta = () => p.evaluate(() => window.__sons);
+await p.click('#bt-principal');                              // clique = gesto que libera o áudio
+const c0 = await conta();
+await p.waitForTimeout(3000);
+const cPergunta = await conta();
+await p.waitForTimeout(6500);                                // tempo acaba: tiques + revelação
+const cRevela = await conta();
+await p.click('#bt-principal');                              // mostrar o pódio
+await p.waitForTimeout(9800);
+const cPodio = await conta();
+await p.screenshot({ path: dir + '/som-podio.png' });
+
+const rot1 = (await p.textContent('#bt-som')).trim();
+await p.click('#bt-som');                                    // muta
+const rot2 = (await p.textContent('#bt-som')).trim();
+const mudo = await p.evaluate(() => Musica.estaLigado());
+
+console.log(`sons agendados — pergunta: ${cPergunta - c0} · +revelação/tiques: ${cRevela - cPergunta} · +pódio: ${cPodio - cRevela}`);
+console.log(`botão: "${rot1}" -> "${rot2}" (ligado=${mudo})`);
 console.log(erros.length ? 'ERROS: ' + erros.join(' | ') : 'sem erros de página');
-host.close(); await b.close();
+j.close(); host.close(); await b.close();
