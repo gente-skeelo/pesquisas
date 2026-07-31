@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "teste": "node teste/partida.js"
+    "teste": "node teste/idiomas.mjs && node teste/partida.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

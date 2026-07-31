@@ -53,7 +53,7 @@ respondem.
 ```bash
 npm install
 npm start            # http://localhost:3000 · /host?k=arraia
-npm run teste        # teste de fumaça (72 verificações)
+npm run teste        # paridade de idiomas + teste de fumaça
 ```
 
 ## Variáveis de ambiente
@@ -80,11 +80,21 @@ Anthropic (`claude-opus-5`, saída estruturada por JSON Schema) e devolve as alt
 **na mesma ordem**, para o índice do gabarito continuar valendo. Sem a chave, nada quebra:
 o botão avisa que o recurso está desligado e a tradução manual segue disponível.
 
+## Idiomas
+
+Português, inglês e espanhol, trocados ao vivo pelo apresentador. A interface das duas
+telas vive em dicionários `T` (`public/host.js` e `public/jogador.js`) — `npm run teste`
+roda antes de tudo uma verificação de paridade: se um idioma ficar sem alguma chave, o
+teste falha em vez de a tela quebrar em produção. Pergunta sem tradução cai no português.
+
 ## Responsividade
 
-Testado em três larguras (1440 px, 800 px e 390 px). A tela do apresentador encolhe
-pergunta, relógio e blocos juntos; o celular ganha alvos de toque maiores, respeita a área
-segura de aparelhos com entalhe e não tem hover fantasma. Nenhuma das telas rola na
+A tela do jogador acompanha a janela: no celular é uma coluna com alvos de toque grandes;
+a partir de 780 px o enunciado, os blocos e os cartões crescem junto, em vez de ficar uma
+faixa estreita no meio do navegador. Testado em 1440 px, 800 px e 390 px.
+
+A tela do apresentador encolhe pergunta, relógio e blocos juntos; o celular respeita a
+área segura de aparelhos com entalhe e não tem hover fantasma. Nenhuma das telas rola na
 horizontal.
 
 ## Logo da marca

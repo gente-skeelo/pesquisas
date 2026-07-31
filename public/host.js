@@ -65,6 +65,37 @@ const T = {
     confirmaMenu: 'Back to the menu? The current game ends.',
     caiu: 'Connection dropped. Reconnecting…',
   },
+  es: {
+    aponte: 'O apunta la cámara del móvil',
+    rotPin: 'PIN de la sala',
+    duplicar: 'Duplicar',
+    copiaDe: (t) => `¿Duplicar "${t}"?`,
+    quem: 'Quién ya llegó',
+    vazio: 'Nadie todavía. Muestra el PIN y el QR en la pantalla grande.',
+    dicaRemover: 'Haz clic en un nombre para sacar a la persona.',
+    confirmaRemover: (n) => `¿Sacar a ${n} de la sala?`,
+    pergunta: (i, t) => `Pregunta ${i} de ${t}`,
+    responderam: (n, tot) => `${n} de ${tot} ya respondieron`,
+    certasDe: (c, n) => `${c} de ${n} acertaron`,
+    parcial: 'Marcador parcial',
+    lideres: 'Quién va adelante',
+    fim: '¡Fin del juego!',
+    mostrarPodio: '🏆 Mostrar el podio',
+    tambores: 'Y el podio es…',
+    chamada: (p) => `${p}º lugar…`,
+    campeao: '¡Campeón/a!',
+    demais: 'Resto del marcador',
+    comecar: 'Empezar',
+    revelar: 'Revelar respuesta',
+    placar: 'Ver marcador',
+    proxima: 'Siguiente pregunta',
+    encerrar: 'Terminar y premiar',
+    jogarDeNovo: 'Jugar de nuevo',
+    menu: 'Menú',
+    naSala: (n) => `${n} en la sala`,
+    confirmaMenu: '¿Volver al menú? La partida actual termina.',
+    caiu: 'Se cayó la conexión. Reconectando…',
+  },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -144,12 +175,12 @@ function conectar() {
 
 function pintar(e) {
   ultimoEstado = e;
-  idioma = e.idioma;
+  idioma = T[e.idioma] ? e.idioma : 'pt';    // idioma sem tradução não derruba a tela
   const t = T[idioma];
   if (e.fase !== 'fim') desmontarFesta();
   if (visao === 'editor') return;          // não sai do editor no meio da digitação
 
-  document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'en';
+  document.documentElement.lang = { pt: 'pt-BR', en: 'en', es: 'es' }[idioma] || 'pt-BR';
   ['pt', 'en', 'es'].forEach((v) => $('bt-' + v).classList.toggle('on', idioma === v));
   $('h-aponte').textContent = t.aponte;
   $('h-parcial').textContent = t.parcial;

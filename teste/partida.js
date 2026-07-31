@@ -330,6 +330,10 @@ try {
   await host.ate((cl) => cl.estado.quizzes.length === 2, 'exclusão');
   conferir('exclui do menu', host.estado.quizzes.every((q) => q.id !== idTeste));
 
+  const htmlHost = await (await fetch(`${BASE}/host?k=${CHAVE}`)).text();
+  conferir('tela do apresentador declara os três idiomas',
+           htmlHost.includes('id="bt-pt"') && htmlHost.includes('id="bt-en"') && htmlHost.includes('id="bt-es"'));
+
   console.log('\nTradução automática');
   const saudeT = await (await fetch(`${BASE}/api/saude`)).json();
   conferir('saúde informa estado da tradução', saudeT.traducao === false, String(saudeT.traducao));

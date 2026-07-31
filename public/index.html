@@ -20,11 +20,11 @@
              onload="this.nextElementSibling.hidden = true">
         <span class="palavra">skeelo</span>
       </span>
-      <div class="topo-centro"><span class="pill on">◎ Quiz do Skee</span></div>
+      <div class="topo-centro"><span class="pill on"><svg class="icone-noz" viewBox="0 0 88 100" fill="currentColor" aria-hidden="true"><path d="M44 2C49 2 52 7 50 13H38C36 7 39 2 44 2Z"/><circle cx="44" cy="62" r="32"/><path d="M44 90c4 0 6 5 0 8-6-3-4-8 0-8Z"/><path d="M9 42C9 22 24 11 44 11s35 11 35 31c0 5-4 8-9 8H18c-5 0-9-3-9-8Z"/></svg>Quiz do Skee</span></div>
     </div>
   </header>
 
-  <main class="envelope" style="max-width:560px">
+  <main class="envelope jogador">
 
     <!-- entrada -->
     <section id="tela-entrar" class="tela ativa">
@@ -47,7 +47,7 @@
 
     <!-- espera -->
     <section id="tela-espera" class="tela centro">
-      <div class="cartao faixa" style="margin-top:12vh;--acento:var(--op1)">
+      <div class="cartao faixa cartao-centro" style="--acento:var(--op1)">
         <div style="font-size:3rem" id="emoji-espera">🌽</div>
         <h2 id="ola">Beleza!</h2>
         <p class="discreto" id="txt-espera">Aguarde o apresentador começar.</p>
@@ -56,16 +56,16 @@
     </section>
 
     <!-- pergunta -->
-    <section id="tela-pergunta" class="tela">
+    <section id="tela-pergunta" class="tela palco-jogador">
       <p class="marca"><span id="idx-pergunta"></span></p>
-      <h2 id="enunciado" style="font-size:clamp(1.1rem,4.4vw,1.5rem)"></h2>
+      <h2 id="enunciado"></h2>
       <div class="barra-tempo"><span id="barra" style="width:100%"></span></div>
       <div class="opcoes" id="opcoes"></div>
     </section>
 
     <!-- resultado da rodada -->
     <section id="tela-feedback" class="tela centro">
-      <div class="cartao faixa" style="margin-top:10vh;--acento:var(--op2)">
+      <div class="cartao faixa cartao-centro" style="--acento:var(--op2)">
         <div style="font-size:3.4rem" id="emoji-feedback">🎉</div>
         <h2 id="veredito"></h2>
         <p id="ganho" style="font-size:1.6rem;font-weight:800;color:var(--milho);margin:.2rem 0"></p>
@@ -76,7 +76,7 @@
 
     <!-- fim -->
     <section id="tela-fim" class="tela centro">
-      <div class="cartao faixa" style="margin-top:6vh;--acento:var(--skeelo)">
+      <div class="cartao faixa cartao-centro" style="--acento:var(--skeelo)">
         <div style="font-size:3.4rem" id="emoji-fim">🏆</div>
         <h2 id="tit-fim">Fim de festa!</h2>
         <p id="resumo-fim" style="font-size:1.15rem"></p>
@@ -84,7 +84,7 @@
       </div>
     </section>
 
-    <p class="discreto centro" id="rodape" style="margin-top:2rem"></p>
+    <p class="discreto centro" id="rodape" style="margin-top:1.4rem"></p>
   </main>
 
   <canvas id="confete" aria-hidden="true"
