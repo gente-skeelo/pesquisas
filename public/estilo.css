@@ -63,7 +63,7 @@ body {
   gap: 1rem;
 }
 .topo .logo-skeelo { color: #fff; }
-.topo .logo-skeelo img { filter: brightness(0) invert(1); }
+.topo .logo-skeelo img { filter: brightness(0) invert(1); }   /* marca monocromática na barra escura */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -117,7 +117,7 @@ p { line-height: 1.55; }
   color: var(--tinta);
 }
 /* logo oficial, quando public/marca.svg (ou .png) existe */
-.logo-skeelo img { height: 26px; width: auto; display: block; }
+.logo-skeelo img { height: 28px; width: auto; display: block; }
 /* fallback tipográfico enquanto o arquivo não está lá */
 .logo-skeelo .palavra {
   font-family: var(--display);

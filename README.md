@@ -119,13 +119,12 @@ horizontal.
 
 ## Logo da marca
 
-A barra do topo procura por **`public/marca.svg`**. Se o arquivo existir, ele é exibido
-(a versão da barra escura recebe `filter: brightness(0) invert(1)`, então funciona com
-logo monocromático); se não existir, aparece a palavra "skeelo" em texto.
+O logo oficial vive em **`public/marca.svg`** (98×32, marca + wordmark). Na barra escura
+ele recebe `filter: brightness(0) invert(1)` e sai branco; em fundo claro mantém as cores
+originais. `public/marca-branca.png` é a versão branca em bitmap, guardada como reserva.
 
-Pra colocar o oficial: suba o arquivo como `public/marca.svg` — pelo GitHub dá pra fazer
-em **Add file → Upload files**, sem precisar de terminal. PNG também serve, é só ajustar
-o `src` nas duas telas (`views/host.html` e `public/index.html`).
+Se o arquivo sumir, as telas caem no fallback tipográfico ("skeelo" em texto) sem quebrar.
+Pra trocar por outra versão, basta substituir o `marca.svg`.
 
 ## Deploy no Railway
 
