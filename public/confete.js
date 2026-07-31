@@ -76,19 +76,20 @@ window.Confete = function (canvas) {
   camada.className = 'glitter';
   camada.setAttribute('aria-hidden', 'true');
 
-  const SIMBOLOS = ['✦', '✧', '✨', '·'];
-  const CORES = ['#00b871', '#eda60a', '#3ddc97', '#59c3ea'];
+  const SIMBOLOS = ['✦', '✧', '✨', '★', '•'];
+  const CORES = ['#00c853', '#34e07a', '#f0a30a', '#ef7fa5', '#59c3ea'];
 
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 46; i++) {
     const s = document.createElement('i');
     s.textContent = SIMBOLOS[(Math.random() * SIMBOLOS.length) | 0];
     s.style.left = Math.random() * 100 + '%';
     s.style.top = Math.random() * 100 + '%';
-    s.style.fontSize = 6 + Math.random() * 12 + 'px';
+    s.style.fontSize = (8 + Math.random() * 18).toFixed(1) + 'px';
     s.style.color = CORES[(Math.random() * CORES.length) | 0];
-    s.style.setProperty('--d', (2.4 + Math.random() * 3.6).toFixed(2) + 's');
-    s.style.setProperty('--a', (Math.random() * 5).toFixed(2) + 's');
-    s.style.setProperty('--o', (0.35 + Math.random() * 0.45).toFixed(2));
+    s.style.setProperty('--d', (2.2 + Math.random() * 3.4).toFixed(2) + 's');
+    s.style.setProperty('--f', (7 + Math.random() * 7).toFixed(2) + 's');
+    s.style.setProperty('--a', (Math.random() * 6).toFixed(2) + 's');
+    s.style.setProperty('--o', (0.45 + Math.random() * 0.45).toFixed(2));
     camada.appendChild(s);
   }
   document.body.appendChild(camada);

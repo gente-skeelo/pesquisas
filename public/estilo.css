@@ -30,7 +30,8 @@
   --sombra:  0 4px 16px rgba(12, 50, 33, .07);
   --sombra2: 0 14px 34px rgba(12, 50, 33, .13);
 
-  --fonte: 'Poppins', ui-rounded, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --fonte:   'Nunito', ui-rounded, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --display: 'Fredoka', 'Nunito', ui-rounded, system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -86,15 +87,21 @@ body {
   to   { opacity: 1; transform: none; }
 }
 
-h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; font-weight: 700; letter-spacing: -.01em; }
+h1, h2, h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.18;
+  margin: 0 0 .5em;
+  letter-spacing: 0;
+}
 p { line-height: 1.55; }
 
 .marca {
-  font-size: .78rem;
-  letter-spacing: .14em;
+  font-size: .8rem;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--skeelo-escuro);
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: .4rem;
 }
 
@@ -108,9 +115,10 @@ p { line-height: 1.55; }
 .logo-skeelo img { height: 26px; width: auto; display: block; }
 /* fallback tipográfico enquanto o arquivo não está lá */
 .logo-skeelo .palavra {
+  font-family: var(--display);
   font-weight: 600;
-  font-size: 1.2rem;
-  letter-spacing: -.035em;
+  font-size: 1.3rem;
+  letter-spacing: -.01em;
   text-transform: lowercase;
 }
 
@@ -171,7 +179,9 @@ p { line-height: 1.55; }
 .botao {
   position: relative;
   font: inherit;
-  font-weight: 600;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 1.02rem;
   color: #fff;
   background: var(--skeelo);
   border: 0;
@@ -227,7 +237,8 @@ p { line-height: 1.55; }
 .opcao {
   position: relative;
   font: inherit;
-  font-weight: 700;
+  font-family: var(--display);
+  font-weight: 500;
   text-align: left;
   display: flex;
   align-items: center;
@@ -312,7 +323,14 @@ p { line-height: 1.55; }
   font-variant-numeric: tabular-nums;
   flex: none;
 }
-.lista .pontos { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lista .pontos {
+  margin-left: auto;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.lista .pos { font-family: var(--display); }
 
 .discreto { color: var(--tinta2); font-size: .92rem; }
 .centro { text-align: center; }
@@ -324,22 +342,29 @@ p { line-height: 1.55; }
   overflow: hidden;
   pointer-events: none;
   z-index: 5;
-  opacity: 0;
-  transition: opacity .4s ease;
 }
-/* aparece só quando a partida está rolando, não nas telas de trabalho */
-body.festa .glitter { opacity: 1; }
 .glitter i {
   position: absolute;
   font-style: normal;
+  line-height: 1;
   opacity: 0;
-  animation: cintila var(--d, 3s) ease-in-out var(--a, 0s) infinite;
+  animation:
+    cintila var(--d, 3s) ease-in-out var(--a, 0s) infinite,
+    flutua var(--f, 9s) ease-in-out var(--a, 0s) infinite;
+  filter: drop-shadow(0 0 5px currentColor);
   will-change: opacity, transform;
 }
 @keyframes cintila {
-  0%, 100% { opacity: 0; transform: scale(.35) rotate(0deg); }
-  50%      { opacity: var(--o, .5); transform: scale(1) rotate(25deg); }
+  0%, 100% { opacity: 0; }
+  45%      { opacity: var(--o, .9); }
+  55%      { opacity: var(--o, .9); }
 }
+@keyframes flutua {
+  0%, 100% { transform: translateY(0) scale(.55) rotate(0deg); }
+  50%      { transform: translateY(-14px) scale(1.15) rotate(22deg); }
+}
+/* durante a partida, o brilho sobe um tom */
+body.festa .glitter i { --o: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .glitter i { animation: none; }
+  .glitter i { animation: none; opacity: .5; }
 }

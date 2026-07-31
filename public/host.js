@@ -265,7 +265,6 @@ function pintarMenu(e) {
 
 function abrirEditor(quiz) {
   visao = 'editor';
-  document.body.classList.remove('festa');
   $('ed-erro').textContent = '';
   $('ed-cabecalho').textContent = quiz ? 'Editar quiz' : 'Novo quiz';
   $('ed-titulo').value = quiz ? quiz.titulo : '';

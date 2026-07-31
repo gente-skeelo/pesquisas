@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap">
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="/estilo.css">
   <style>
     .envelope { max-width: 1340px; padding-bottom: 104px; }
@@ -19,7 +19,8 @@
 
     #qr { width: 100%; border-radius: 18px; display: block; background: #fff; padding: 8px; }
     #pin-grande {
-      font-size: clamp(2.4rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: .12em;
+      font-family: var(--display);
+      font-size: clamp(2.6rem, 5.4vw, 3.8rem); font-weight: 600; letter-spacing: .14em;
       color: var(--tinta); margin: 0 0 .8rem; font-variant-numeric: tabular-nums;
     }
     .url {
@@ -95,7 +96,7 @@
       border-radius: 18px; margin: 16px 0; padding: 20px; box-shadow: var(--sombra);
     }
     .ed-topo { display: flex; align-items: center; gap: .7rem; margin-bottom: .9rem; }
-    .ed-num {
+    .ed-num { font-family: var(--display);
       width: 30px; height: 30px; border-radius: 9px; flex: none;
       display: flex; align-items: center; justify-content: center;
       background: var(--menta); color: var(--skeelo-escuro); font-weight: 700; font-size: .9rem;
@@ -176,15 +177,17 @@
       border-radius: 22px;
     }
     .enunciado-grande {
-      font-size: clamp(1.5rem, 3.6vw, 3rem);
-      margin: 0; line-height: 1.18; text-wrap: balance;
+      font-family: var(--display); font-weight: 600;
+      font-size: clamp(1.55rem, 3.7vw, 3.1rem);
+      margin: 0; line-height: 1.16; text-wrap: balance;
     }
     .faixa-jogo { display: flex; align-items: center; gap: 1rem; }
     .relogio {
       width: clamp(62px, 7vw, 92px); height: clamp(62px, 7vw, 92px); flex: none;
       border-radius: 50%; background: var(--floresta); color: #fff;
       display: flex; align-items: center; justify-content: center;
-      font-size: clamp(1.6rem, 3.4vw, 2.6rem); font-weight: 800;
+      font-family: var(--display); font-weight: 600;
+      font-size: clamp(1.7rem, 3.6vw, 2.8rem);
       font-variant-numeric: tabular-nums;
       box-shadow: 0 8px 22px rgba(12, 50, 33, .28);
     }
@@ -264,14 +267,14 @@
       width: clamp(56px, 7vw, 84px); height: clamp(56px, 7vw, 84px);
       margin: 0 auto .5rem; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 800; color: #14271d;
+      font-family: var(--display); font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 600; color: #14271d;
       border: 3px solid #fff; box-shadow: 0 8px 22px rgba(23, 58, 41, .22);
     }
     .c1 .avatar { background: linear-gradient(135deg, #ffd76a, #ff9f1c); }
     .c2 .avatar { background: linear-gradient(135deg, #eef2fa, #9fb0c8); }
     .c3 .avatar { background: linear-gradient(135deg, #f2b98c, #c97a3d); }
-    .coluna .quem { font-weight: 800; font-size: clamp(1rem, 2.4vw, 1.4rem); word-break: break-word; }
-    .coluna .qtd { font-weight: 800; color: var(--skeelo-escuro); font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
+    .coluna .quem { font-family: var(--display); font-weight: 600; font-size: clamp(1rem, 2.4vw, 1.45rem); word-break: break-word; }
+    .coluna .qtd { font-family: var(--display); font-weight: 600; font-size: 1.2rem; color: var(--skeelo-escuro); font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
     .coluna .bloco {
       position: relative; overflow: hidden;
       border-radius: 18px 18px 0 0;
