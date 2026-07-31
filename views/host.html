@@ -46,10 +46,12 @@
 
     .fichas { display: flex; flex-wrap: wrap; gap: 8px; }
     .ficha {
+      font: 600 .95rem var(--fonte); color: var(--creme);
       padding: .45rem .85rem; border-radius: 999px;
       background: rgba(255, 255, 255, .09); border: 1px solid var(--borda);
-      font-weight: 600; font-size: .95rem;
+      cursor: pointer; transition: background .12s ease, border-color .12s ease;
     }
+    .ficha:hover { background: rgba(239, 71, 111, .28); border-color: var(--rosa); }
     .ficha.fora { opacity: .4; text-decoration: line-through; }
 
     .relogio {

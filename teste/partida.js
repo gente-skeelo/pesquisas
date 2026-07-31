@@ -191,6 +191,17 @@ try {
   conferir('reiniciar zera a pontuação', host.estado.ranking.every((r) => r.pontos === 0));
   conferir('reiniciar mantém quem está na sala', host.estado.jogadores.length === 3);
 
+  console.log('\nRemoção pelo apresentador');
+  host.envia({ t: 'remover', nome: 'cida' });                // caixa não importa
+  await host.ate((cl) => cl.estado.jogadores.length === 2, 'sala com 2');
+  conferir('apresentador remove jogador pelo nome', host.estado.jogadores.length === 2);
+  conferir('removido some do ranking', host.estado.ranking.every((r) => r.nome !== 'Cida'));
+  await jogadores[2].ate((cl) => cl.erro === 'desconhecido', 'aviso ao removido');
+  conferir('removido é avisado e volta pra entrada', jogadores[2].erro === 'desconhecido');
+  jogadores[2].envia({ t: 'remover', nome: 'Ana' });         // jogador não pode remover
+  await espera(200);
+  conferir('jogador não consegue remover ninguém', host.estado.jogadores.length === 2);
+
   console.log('\nComandos de jogador não movem a partida');
   jogadores[0].envia({ t: 'comecar' });
   await espera(200);

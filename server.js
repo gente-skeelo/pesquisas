@@ -189,6 +189,23 @@ function reiniciar() {
   transmitir();
 }
 
+function removerJogador(nome) {
+  const alvo = [...jogo.jogadores.values()].find(
+    (j) => j.nome.toLowerCase() === String(nome || '').toLowerCase(),
+  );
+  if (!alvo) return;
+  jogo.jogadores.delete(alvo.token);
+  for (const dadas of jogo.respostas.values()) dadas.delete(alvo.token);
+  for (const ws of wss.clients) {
+    if (ws.token === alvo.token) {
+      ws.token = null;
+      ws.papel = null;
+      if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ t: 'erro', erro: 'desconhecido' }));
+    }
+  }
+  transmitir();
+}
+
 function responder(token, q, opcao) {
   if (jogo.fase !== 'pergunta' || q !== jogo.q) return;
   if (!jogo.jogadores.has(token)) return;
@@ -279,6 +296,7 @@ wss.on('connection', (ws) => {
       else if (m.t === 'proxima') proxima();
       else if (m.t === 'encerrar') encerrar();
       else if (m.t === 'reiniciar') reiniciar();
+      else if (m.t === 'remover') removerJogador(m.nome);
       else if (m.t === 'idioma' && (m.v === 'pt' || m.v === 'en')) {
         jogo.idioma = m.v;
         transmitir();

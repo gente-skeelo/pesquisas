@@ -8,6 +8,8 @@ const T = {
     aponte: 'Aponte a câmera do celular',
     quem: 'Quem já chegou',
     vazio: 'Ninguém ainda. Mostre o QR na tela grande.',
+    dicaRemover: 'Clique num nome pra tirar a pessoa da sala.',
+    confirmaRemover: (n) => `Tirar ${n} da sala?`,
     pergunta: (i, t) => `Pergunta ${i} de ${t}`,
     responderam: (n, tot) => `${n} de ${tot} já responderam`,
     parcial: 'Placar parcial',
@@ -28,6 +30,8 @@ const T = {
     aponte: 'Point your phone camera',
     quem: 'Already here',
     vazio: 'Nobody yet. Put the QR on the big screen.',
+    dicaRemover: 'Click a name to remove that person.',
+    confirmaRemover: (n) => `Remove ${n} from the room?`,
     pergunta: (i, t) => `Question ${i} of ${t}`,
     responderam: (n, tot) => `${n} of ${tot} have answered`,
     parcial: 'Standings',
@@ -105,13 +109,18 @@ function pintar(e) {
 
   if (e.fase === 'lobby') {
     $('n-jogadores').textContent = e.jogadores.length ? `(${e.jogadores.length})` : '';
-    $('h-vazio').textContent = e.jogadores.length ? '' : t.vazio;
+    $('h-vazio').textContent = e.jogadores.length ? t.dicaRemover : t.vazio;
     const caixa = $('fichas');
     caixa.innerHTML = '';
     e.jogadores.forEach((j) => {
-      const s = document.createElement('span');
+      const s = document.createElement('button');
+      s.type = 'button';
       s.className = 'ficha' + (j.conectado ? '' : ' fora');
       s.textContent = j.nome;
+      s.title = t.confirmaRemover(j.nome);
+      s.onclick = () => {
+        if (confirm(t.confirmaRemover(j.nome))) enviar({ t: 'remover', nome: j.nome });
+      };
       caixa.appendChild(s);
     });
     principal.textContent = t.comecar;
