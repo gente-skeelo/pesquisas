@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1030">
+  <title>Quiz do Skee: Festas Juninas pelo mundo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔥</text></svg>">
+  <link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+  <div class="bandeirinhas" aria-hidden="true"></div>
+
+  <main class="envelope" style="max-width:560px">
+
+    <!-- entrada -->
+    <section id="tela-entrar" class="tela ativa">
+      <p class="marca">Quiz do Skee</p>
+      <h1 id="tit-entrar">Festas Juninas pelo mundo</h1>
+      <p class="discreto" id="sub-entrar">Digite seu nome pra entrar no arraiá.</p>
+      <div class="cartao" style="margin-top:1.2rem">
+        <form id="form-entrar" autocomplete="off">
+          <label for="nome" class="discreto" id="rot-nome">Seu nome</label>
+          <input id="nome" class="campo" style="margin:.5rem 0 1rem" maxlength="18" required
+                 placeholder="Maria" enterkeyhint="go">
+          <button class="botao" style="width:100%" id="bt-entrar">Entrar</button>
+          <p id="erro-entrar" class="discreto" style="color:var(--rosa);min-height:1.4em;margin:.7rem 0 0"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- espera -->
+    <section id="tela-espera" class="tela centro">
+      <div class="cartao" style="margin-top:15vh">
+        <div style="font-size:3rem" id="emoji-espera">🌽</div>
+        <h2 id="ola">Beleza!</h2>
+        <p class="discreto" id="txt-espera">Aguarde o apresentador começar.</p>
+        <p class="discreto" id="contagem-jogadores"></p>
+      </div>
+    </section>
+
+    <!-- pergunta -->
+    <section id="tela-pergunta" class="tela">
+      <p class="marca"><span id="idx-pergunta"></span></p>
+      <h2 id="enunciado" style="font-size:clamp(1.1rem,4.4vw,1.5rem)"></h2>
+      <div class="barra-tempo"><span id="barra" style="width:100%"></span></div>
+      <div class="opcoes" id="opcoes"></div>
+    </section>
+
+    <!-- resultado da rodada -->
+    <section id="tela-feedback" class="tela centro">
+      <div class="cartao" style="margin-top:12vh">
+        <div style="font-size:3.4rem" id="emoji-feedback">🎉</div>
+        <h2 id="veredito"></h2>
+        <p id="ganho" style="font-size:1.6rem;font-weight:800;color:var(--milho);margin:.2rem 0"></p>
+        <p class="discreto" id="situacao"></p>
+      </div>
+    </section>
+
+    <!-- fim -->
+    <section id="tela-fim" class="tela centro">
+      <div class="cartao" style="margin-top:8vh">
+        <div style="font-size:3.4rem">🏆</div>
+        <h2 id="tit-fim">Fim de festa!</h2>
+        <p id="resumo-fim" style="font-size:1.15rem"></p>
+        <ol class="lista" id="podio" style="margin-top:1.2rem;text-align:left"></ol>
+      </div>
+    </section>
+
+    <p class="discreto centro" id="rodape" style="margin-top:2rem"></p>
+  </main>
+
+  <script src="/jogador.js"></script>
+</body>
+</html>

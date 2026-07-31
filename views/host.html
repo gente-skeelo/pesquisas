@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1b1030">
+  <title>Apresentador · Quiz do Skee</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎪</text></svg>">
+  <link rel="stylesheet" href="/estilo.css">
+  <style>
+    .envelope { max-width: 1240px; padding-bottom: 108px; }
+    .duas { display: grid; gap: 28px; grid-template-columns: 360px 1fr; align-items: start; }
+    @media (max-width: 900px) { .duas { grid-template-columns: 1fr; } }
+
+    #qr { width: 100%; border-radius: 16px; display: block; background: #fff; padding: 10px; }
+    .url {
+      font: 600 1rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+      word-break: break-all;
+      color: var(--milho);
+    }
+
+    .barra-controle {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      display: flex; gap: 12px; align-items: center; justify-content: center;
+      padding: 14px clamp(12px, 3vw, 28px);
+      background: rgba(12, 6, 24, .82);
+      border-top: 1px solid var(--borda);
+      backdrop-filter: blur(10px);
+      z-index: 40;
+    }
+    .barra-controle .esquerda { margin-right: auto; display: flex; gap: 10px; align-items: center; }
+
+    .seletor { display: inline-flex; border: 1px solid var(--borda); border-radius: 999px; overflow: hidden; }
+    .seletor button {
+      font: 600 .9rem var(--fonte); color: var(--creme); background: transparent;
+      border: 0; padding: .5rem .9rem; cursor: pointer;
+    }
+    .seletor button.on { background: var(--milho); color: var(--noite); }
+
+    .enunciado-grande { font-size: clamp(1.4rem, 3.4vw, 2.6rem); }
+    .contagem { position: relative; }
+    .contagem .n {
+      position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+      font-size: 1.5rem; font-weight: 800;
+    }
+
+    .fichas { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ficha {
+      padding: .45rem .85rem; border-radius: 999px;
+      background: rgba(255, 255, 255, .09); border: 1px solid var(--borda);
+      font-weight: 600; font-size: .95rem;
+    }
+    .ficha.fora { opacity: .4; text-decoration: line-through; }
+
+    .relogio {
+      font-size: clamp(2.4rem, 7vw, 4.4rem); font-weight: 800;
+      font-variant-numeric: tabular-nums; color: var(--milho); line-height: 1;
+    }
+    .curiosidade {
+      border-left: 4px solid var(--milho); padding-left: 1rem;
+      font-size: clamp(1rem, 1.8vw, 1.25rem); margin-top: 1.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="bandeirinhas" aria-hidden="true"></div>
+
+  <main class="envelope">
+
+    <!-- lobby -->
+    <section id="tela-lobby" class="tela ativa">
+      <p class="marca">Quiz do Skee</p>
+      <h1 id="h-titulo" style="font-size:clamp(1.8rem,5vw,3.2rem)">Festas Juninas pelo mundo</h1>
+      <div class="duas" style="margin-top:1.4rem">
+        <div class="cartao centro">
+          <img id="qr" alt="QR code de entrada">
+          <p class="discreto" id="h-aponte" style="margin:.9rem 0 .3rem">Aponte a câmera</p>
+          <p class="url" id="url"></p>
+        </div>
+        <div class="cartao">
+          <h2 id="h-quem">Quem já chegou <span id="n-jogadores" style="color:var(--milho)"></span></h2>
+          <div class="fichas" id="fichas"></div>
+          <p class="discreto" id="h-vazio" style="margin-top:1rem"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- pergunta / revelação -->
+    <section id="tela-jogo" class="tela">
+      <div style="display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap">
+        <p class="marca" id="idx"></p>
+        <span style="margin-left:auto" class="relogio" id="relogio"></span>
+      </div>
+      <h2 class="enunciado-grande" id="enunciado"></h2>
+      <div class="barra-tempo"><span id="barra" style="width:100%"></span></div>
+      <div class="opcoes" id="opcoes"></div>
+      <p class="discreto" id="respondidos" style="margin-top:1rem"></p>
+      <p class="curiosidade" id="curiosidade" hidden></p>
+    </section>
+
+    <!-- placar -->
+    <section id="tela-placar" class="tela">
+      <p class="marca" id="h-parcial">Placar parcial</p>
+      <h2 style="font-size:clamp(1.6rem,4vw,2.6rem)" id="h-lideres">Quem está na frente</h2>
+      <ol class="lista" id="placar" style="margin-top:1.2rem"></ol>
+    </section>
+
+    <!-- fim -->
+    <section id="tela-fim" class="tela centro">
+      <div style="font-size:4rem">🏆</div>
+      <h1 id="h-fim" style="font-size:clamp(1.8rem,5vw,3rem)">Fim de festa!</h1>
+      <ol class="lista" id="podio" style="max-width:640px;margin:1.6rem auto 0;text-align:left"></ol>
+    </section>
+  </main>
+
+  <div class="barra-controle">
+    <div class="esquerda">
+      <div class="seletor" role="group" aria-label="Idioma">
+        <button id="bt-pt" class="on">PT</button>
+        <button id="bt-en">EN</button>
+      </div>
+      <span class="discreto" id="situacao"></span>
+    </div>
+    <button class="botao fantasma" id="bt-reiniciar">Reiniciar</button>
+    <button class="botao" id="bt-principal">Começar</button>
+  </div>
+
+  <script>window.CHAVE = decodeURIComponent('__CHAVE__');</script>
+  <script src="/host.js"></script>
+</body>
+</html>
