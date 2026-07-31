@@ -14,6 +14,7 @@ const T = {
     confirmaRemover: (n) => `Tirar ${n} da sala?`,
     pergunta: (i, t) => `Pergunta ${i} de ${t}`,
     responderam: (n, tot) => `${n} de ${tot} já responderam`,
+    certasDe: (c, n) => `${c} de ${n} acertaram`,
     parcial: 'Placar parcial',
     lideres: 'Quem está na frente',
     fim: 'Fim de jogo!',
@@ -39,6 +40,7 @@ const T = {
     confirmaRemover: (n) => `Remove ${n} from the room?`,
     pergunta: (i, t) => `Question ${i} of ${t}`,
     responderam: (n, tot) => `${n} of ${tot} have answered`,
+    certasDe: (c, n) => `${c} of ${n} got it right`,
     parcial: 'Standings',
     lideres: 'Who is ahead',
     fim: "That's a wrap!",
@@ -186,7 +188,9 @@ function pintar(e) {
     const revelando = e.fase === 'revelacao';
     $('barra').style.width = `${revelando ? 0 : e.duracao ? (e.restante / e.duracao) * 100 : 0}%`;
     $('relogio').textContent = revelando ? '' : Math.ceil(e.restante / 1000);
-    $('respondidos').textContent = t.responderam(e.responderam, e.jogadores.length);
+    $('respondidos').textContent = revelando
+      ? t.certasDe(e.contagem ? e.contagem[e.correta] : 0, e.responderam)
+      : t.responderam(e.responderam, e.jogadores.length);
 
     [...$('opcoes').children].forEach((b, i) => {
       b.classList.toggle('certa', revelando && i === e.correta);

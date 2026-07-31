@@ -227,12 +227,12 @@ p { line-height: 1.55; }
 .opcao {
   position: relative;
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
   text-align: left;
   display: flex;
   align-items: center;
   gap: .9rem;
-  min-height: 78px;
+  min-height: 88px;
   padding: 1rem 1.2rem;
   background: #fff;
   border: 1.5px solid var(--borda);

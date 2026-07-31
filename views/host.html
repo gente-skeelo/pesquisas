@@ -12,7 +12,7 @@
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="/estilo.css">
   <style>
-    .envelope { max-width: 1240px; padding-bottom: 108px; }
+    .envelope { max-width: 1340px; padding-bottom: 104px; }
     .duas > * { height: 100%; }
     .duas { display: grid; gap: 28px; grid-template-columns: 360px 1fr; align-items: start; }
     @media (max-width: 900px) { .duas { grid-template-columns: 1fr; } }
@@ -167,12 +167,74 @@
     .campo-curto { width: 168px; }
 
     /* ---------- jogo ---------- */
-    .enunciado-grande { font-size: clamp(1.4rem, 3.4vw, 2.6rem); }
-    .contagem { position: relative; }
-    .contagem .n {
-      position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
-      font-size: 1.5rem; font-weight: 800;
+    .tela.ativa.palco {
+      display: flex; flex-direction: column; gap: 14px;
+      min-height: calc(100vh - 208px);
     }
+    .pergunta-card {
+      padding: clamp(18px, 3vw, 34px) clamp(20px, 4vw, 46px);
+      border-radius: 22px;
+    }
+    .enunciado-grande {
+      font-size: clamp(1.5rem, 3.6vw, 3rem);
+      margin: 0; line-height: 1.18; text-wrap: balance;
+    }
+    .faixa-jogo { display: flex; align-items: center; gap: 1rem; }
+    .relogio {
+      width: clamp(62px, 7vw, 92px); height: clamp(62px, 7vw, 92px); flex: none;
+      border-radius: 50%; background: var(--floresta); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: clamp(1.6rem, 3.4vw, 2.6rem); font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 8px 22px rgba(12, 50, 33, .28);
+    }
+    .relogio:empty { display: none; }
+    .contador {
+      margin: 0 0 0 auto; flex: none;
+      font-weight: 700; font-size: clamp(.95rem, 1.6vw, 1.2rem); color: var(--tinta2);
+      background: #fff; border: 1px solid var(--borda); border-radius: 999px;
+      padding: .6rem 1.2rem; box-shadow: var(--sombra);
+    }
+
+    /* alternativas em blocos grandes, ocupando a metade de baixo */
+    .opcoes.grandes { flex: 1; min-height: 0; gap: 16px; align-content: stretch; padding-bottom: 4px; }
+    .opcoes.grandes .opcao {
+      min-height: clamp(88px, 13.5vh, 158px);
+      border-radius: 20px; border-width: 0; padding: 1.2rem 1.6rem;
+      background: var(--cor);
+      font-size: clamp(1.05rem, 1.9vw, 1.6rem);
+      font-weight: 700; line-height: 1.25;
+      box-shadow: 0 8px 22px rgba(12, 50, 33, .12);
+    }
+    .opcoes.grandes .opcao::before { display: none; }
+    .opcoes.grandes .opcao .forma {
+      width: clamp(44px, 4.4vw, 62px); height: clamp(44px, 4.4vw, 62px);
+      border-radius: 16px; background: rgba(255, 255, 255, .62);
+      font-size: clamp(1.2rem, 2vw, 1.7rem); color: rgba(13, 40, 24, .6);
+    }
+    .opcoes.grandes .opcao .n {
+      position: static; transform: none; margin-left: auto;
+      font-size: clamp(1.4rem, 2.6vw, 2.2rem); font-weight: 800; color: rgba(13, 40, 24, .55);
+    }
+    .opcoes.grandes .opcao.certa {
+      box-shadow: 0 0 0 5px var(--skeelo), 0 14px 32px rgba(0, 200, 83, .3);
+      transform: scale(1.015);
+    }
+    .opcoes.grandes .opcao.apagada { opacity: .32; }
+
+    .curiosidade {
+      flex: 1; margin: 0;
+      position: relative; background: #fff; border: 1px solid var(--borda);
+      border-radius: 16px; padding: .9rem 1.2rem .9rem 1.5rem;
+      box-shadow: var(--sombra);
+      font-size: clamp(.95rem, 1.5vw, 1.15rem);
+    }
+    .curiosidade::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+      background: var(--milho); border-radius: 16px 0 0 16px;
+    }
+    .curiosidade[hidden] { display: none; }
+
     .fichas { display: flex; flex-wrap: wrap; gap: 8px; }
     .ficha {
       font: 600 .95rem var(--fonte); color: var(--tinta);
@@ -182,20 +244,6 @@
     }
     .ficha:hover { background: #fdeaef; border-color: rgba(232, 93, 126, .4); color: #c2445f; }
     .ficha.fora { opacity: .4; text-decoration: line-through; }
-    .relogio {
-      font-size: clamp(2.4rem, 7vw, 4.4rem); font-weight: 800;
-      font-variant-numeric: tabular-nums; color: var(--skeelo-escuro); line-height: 1;
-    }
-    .curiosidade {
-      position: relative; background: #fff; border: 1px solid var(--borda);
-      border-radius: 16px; padding: 1.1rem 1.3rem 1.1rem 1.6rem;
-      box-shadow: var(--sombra);
-      font-size: clamp(1rem, 1.8vw, 1.2rem); margin-top: 1.4rem;
-    }
-    .curiosidade::before {
-      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
-      background: var(--milho); border-radius: 16px 0 0 16px;
-    }
 
     /* ---------- pódio ---------- */
     #confete { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
@@ -330,16 +378,18 @@
     </section>
 
     <!-- pergunta / revelação -->
-    <section id="tela-jogo" class="tela">
-      <div style="display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap">
-        <p class="marca" id="idx"></p>
-        <span style="margin-left:auto" class="relogio" id="relogio"></span>
+    <section id="tela-jogo" class="tela palco">
+      <p class="marca centro" id="idx"></p>
+      <div class="cartao pergunta-card centro">
+        <h2 class="enunciado-grande" id="enunciado"></h2>
       </div>
-      <h2 class="enunciado-grande" id="enunciado"></h2>
       <div class="barra-tempo"><span id="barra" style="width:100%"></span></div>
-      <div class="opcoes" id="opcoes"></div>
-      <p class="discreto" id="respondidos" style="margin-top:1rem"></p>
-      <p class="curiosidade" id="curiosidade" hidden></p>
+      <div class="faixa-jogo">
+        <div class="relogio" id="relogio"></div>
+        <p class="curiosidade" id="curiosidade" hidden></p>
+        <p class="contador" id="respondidos"></p>
+      </div>
+      <div class="opcoes grandes" id="opcoes"></div>
     </section>
 
     <!-- placar -->
