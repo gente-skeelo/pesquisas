@@ -1,9 +1,10 @@
 /**
- * Quiz do Skee: Festas Juninas pelo mundo — servidor
+ * Quiz do Skee — servidor do centralizador de quizzes da Skeelo.
  *
- * Um processo, uma sala, estado em memória. O apresentador abre /host?k=CHAVE
- * numa tela grande; a galera entra pela raiz no celular. Tudo em tempo real por
- * WebSocket: o servidor é a fonte da verdade do relógio e da pontuação.
+ * Um processo, uma sala ao vivo, biblioteca de quizzes persistida (Postgres
+ * via DATABASE_URL, ou arquivo local). O apresentador abre /host?k=CHAVE,
+ * escolhe (ou monta) um quiz no menu e conduz; a galera entra pela raiz.
+ * Partida em andamento vive em memória; os quizzes, não.
  */
 
 import { readFileSync } from 'node:fs';
@@ -16,22 +17,26 @@ import express from 'express';
 import QRCode from 'qrcode';
 import { WebSocketServer } from 'ws';
 
-import { BARALHO } from './baralho.js';
+import * as armazem from './armazem.js';
 
 const RAIZ = dirname(fileURLToPath(import.meta.url));
 
-const PORTA         = Number(process.env.PORT || 3000);
-const CHAVE_HOST    = process.env.CHAVE_HOST || 'arraia';
-const URL_PUBLICA   = process.env.URL_PUBLICA || '';
-const PONTOS_BASE   = 500;   // por acertar
-const PONTOS_RAPIDEZ = 500;  // extra proporcional ao tempo que sobrou
-const PAUSA_FIM     = 700;   // respiro antes de revelar quando todos já responderam
+const PORTA          = Number(process.env.PORT || 3000);
+const CHAVE_HOST     = process.env.CHAVE_HOST || 'arraia';
+const URL_PUBLICA    = process.env.URL_PUBLICA || '';
+const PONTOS_BASE    = 500;   // por acertar
+const PONTOS_RAPIDEZ = 500;   // extra proporcional ao tempo que sobrou
+const PAUSA_FIM      = 700;   // respiro antes de revelar quando todos já responderam
 
 /* ---------- estado da partida ---------- */
 
 const jogo = {
-  fase: 'lobby',        // lobby | pergunta | revelacao | placar | fim
+  fase: 'menu',         // menu | lobby | pergunta | revelacao | placar | fim
   idioma: 'pt',
+  baralho: [],          // cartas do quiz escolhido
+  quizId: null,
+  quizTitulo: '',
+  quizEmoji: '',
   q: -1,
   abertaEm: 0,
   relogio: null,
@@ -39,10 +44,10 @@ const jogo = {
   respostas: new Map(), // indice da pergunta -> Map(token -> { opcao, ms })
 };
 
-const carta = () => (jogo.q >= 0 && jogo.q < BARALHO.length ? BARALHO[jogo.q] : null);
+const carta = () => (jogo.q >= 0 && jogo.q < jogo.baralho.length ? jogo.baralho[jogo.q] : null);
 const texto = () => {
   const c = carta();
-  return c ? c[jogo.idioma] : null;
+  return c ? c[jogo.idioma] || c.pt : null;   // sem tradução, cai no português
 };
 
 function ranking() {
@@ -64,14 +69,16 @@ function base() {
   return {
     fase: jogo.fase,
     idioma: jogo.idioma,
+    quiz: jogo.quizTitulo,
+    emoji: jogo.quizEmoji,
     q: jogo.q,
-    total: BARALHO.length,
+    total: jogo.baralho.length,
     enunciado: t ? t.enunciado : '',
     opcoes: t ? t.opcoes : [],
     duracao: c ? c.segundos * 1000 : 0,
     restante: restanteMs(),
-    correta: revelando ? c.correta : null,
-    curiosidade: jogo.fase === 'revelacao' ? t.curiosidade : '',
+    correta: revelando && c ? c.correta : null,
+    curiosidade: jogo.fase === 'revelacao' && t ? t.curiosidade || '' : '',
   };
 }
 
@@ -82,9 +89,10 @@ function estadoApresentador() {
 
   return {
     ...base(),
+    quizzes: armazem.listar(),
     jogadores: [...jogo.jogadores.values()].map((j) => ({ nome: j.nome, conectado: j.conectado })),
     responderam: dadas.size,
-    contagem: jogo.fase === 'lobby' || jogo.fase === 'pergunta' ? null : contagem,
+    contagem: jogo.fase === 'revelacao' || jogo.fase === 'placar' ? contagem : null,
     ranking: ranking().slice(0, 10),
   };
 }
@@ -123,17 +131,98 @@ function transmitir() {
   }
 }
 
+/* ---------- biblioteca ---------- */
+
+/** Normaliza e valida um quiz vindo do editor. PT obrigatório; EN opcional. */
+function validarQuiz(bruto) {
+  if (!bruto || typeof bruto !== 'object') return { erro: 'quiz' };
+  const titulo = String(bruto.titulo || '').trim().slice(0, 60);
+  if (!titulo) return { erro: 'titulo' };
+  if (!Array.isArray(bruto.cartas) || !bruto.cartas.length) return { erro: 'cartas' };
+
+  const cartas = [];
+  for (const c of bruto.cartas) {
+    const pt = (c && c.pt) || {};
+    const enunciado = String(pt.enunciado || '').trim().slice(0, 300);
+    const opcoes = (Array.isArray(pt.opcoes) ? pt.opcoes : [])
+      .map((o) => String(o || '').trim().slice(0, 160));
+    if (!enunciado || opcoes.length !== 4 || opcoes.some((o) => !o)) return { erro: 'pergunta' };
+
+    const correta = Number(c.correta);
+    if (!Number.isInteger(correta) || correta < 0 || correta > 3) return { erro: 'correta' };
+
+    const nova = {
+      segundos: Math.min(120, Math.max(5, Math.round(Number(c.segundos) || 20))),
+      correta,
+      pt: { enunciado, opcoes, curiosidade: String(pt.curiosidade || '').trim().slice(0, 500) },
+    };
+
+    const en = (c && c.en) || {};
+    const enEnunciado = String(en.enunciado || '').trim().slice(0, 300);
+    const enOpcoes = (Array.isArray(en.opcoes) ? en.opcoes : [])
+      .map((o) => String(o || '').trim().slice(0, 160));
+    if (enEnunciado && enOpcoes.length === 4 && enOpcoes.every(Boolean)) {
+      nova.en = { enunciado: enEnunciado, opcoes: enOpcoes, curiosidade: String(en.curiosidade || '').trim().slice(0, 500) };
+    }
+    cartas.push(nova);
+  }
+
+  return {
+    quiz: {
+      id: typeof bruto.id === 'string' && bruto.id ? bruto.id : undefined,
+      titulo,
+      emoji: String(bruto.emoji || '').trim().slice(0, 4) || '🎯',
+      cartas,
+    },
+  };
+}
+
 /* ---------- máquina de estados ---------- */
 
+function abrirQuiz(id) {
+  const quiz = armazem.pegar(id);
+  if (!quiz) return;
+  clearTimeout(jogo.relogio);
+  jogo.baralho = quiz.cartas;
+  jogo.quizId = quiz.id;
+  jogo.quizTitulo = quiz.titulo;
+  jogo.quizEmoji = quiz.emoji || '🎯';
+  jogo.fase = 'lobby';
+  jogo.q = -1;
+  jogo.abertaEm = 0;
+  jogo.respostas.clear();
+  for (const j of jogo.jogadores.values()) {
+    j.pontos = 0;
+    j.ganho = 0;
+  }
+  transmitir();
+}
+
+function irMenu() {
+  clearTimeout(jogo.relogio);
+  jogo.fase = 'menu';
+  jogo.baralho = [];
+  jogo.quizId = null;
+  jogo.quizTitulo = '';
+  jogo.quizEmoji = '';
+  jogo.q = -1;
+  jogo.respostas.clear();
+  for (const j of jogo.jogadores.values()) {
+    j.pontos = 0;
+    j.ganho = 0;
+  }
+  transmitir();
+}
+
 function abrirPergunta(i) {
-  if (i < 0 || i >= BARALHO.length) return encerrar();
+  if (i < 0 || i >= jogo.baralho.length) return encerrar();
   clearTimeout(jogo.relogio);
   jogo.q = i;
   jogo.fase = 'pergunta';
   jogo.abertaEm = Date.now();
   jogo.respostas.set(i, new Map());
   for (const j of jogo.jogadores.values()) j.ganho = 0;
-  jogo.relogio = setTimeout(revelar, BARALHO[i].segundos * 1000);
+  jogo.relogio = setTimeout(revelar, jogo.baralho[i].segundos * 1000);
   transmitir();
 }
 
@@ -166,7 +255,7 @@ function mostrarPlacar() {
 }
 
 function proxima() {
-  if (jogo.q + 1 >= BARALHO.length) return encerrar();
+  if (jogo.q + 1 >= jogo.baralho.length) return encerrar();
   abrirPergunta(jogo.q + 1);
 }
 
@@ -177,16 +266,8 @@ function encerrar() {
 }
 
 function reiniciar() {
-  clearTimeout(jogo.relogio);
-  jogo.fase = 'lobby';
-  jogo.q = -1;
-  jogo.abertaEm = 0;
-  jogo.respostas.clear();
-  for (const j of jogo.jogadores.values()) {
-    j.pontos = 0;
-    j.ganho = 0;
-  }
-  transmitir();
+  if (!jogo.quizId) return irMenu();
+  abrirQuiz(jogo.quizId);        // mesmo quiz, sala mantida, pontos zerados
 }
 
 function removerJogador(nome) {
@@ -246,7 +327,7 @@ app.use(express.static(publico, { maxAge: '1h' }));
 app.get('/host', (req, res) => {
   if ((req.query.k || '') !== CHAVE_HOST) {
     return res.status(401).type('html').send(
-      '<meta charset="utf-8"><body style="font:16px/1.5 system-ui;background:#1b1030;color:#fff;padding:3rem">' +
+      '<meta charset="utf-8"><body style="font:16px/1.5 system-ui;background:#160b26;color:#fff;padding:3rem">' +
         '<h1>Chave inválida</h1><p>O modo apresentador precisa de <code>?k=SUA_CHAVE</code>.</p></body>',
     );
   }
@@ -260,7 +341,13 @@ app.get('/api/entrada', async (req, res) => {
 });
 
 app.get('/api/saude', (req, res) => {
-  res.json({ ok: true, fase: jogo.fase, jogadores: jogo.jogadores.size, perguntas: BARALHO.length });
+  res.json({
+    ok: true,
+    fase: jogo.fase,
+    quiz: jogo.quizTitulo,
+    jogadores: jogo.jogadores.size,
+    quizzes: armazem.listar().length,
+  });
 });
 
 /* ---------- WebSocket ---------- */
@@ -274,7 +361,7 @@ wss.on('connection', (ws) => {
   ws.vivo = true;
   ws.on('pong', () => { ws.vivo = true; });
 
-  ws.on('message', (bruto) => {
+  ws.on('message', async (bruto) => {
     let m;
     try {
       m = JSON.parse(bruto);
@@ -290,7 +377,9 @@ wss.on('connection', (ws) => {
     }
 
     if (ws.papel === 'host') {
-      if (m.t === 'comecar') abrirPergunta(0);
+      if (m.t === 'abrirQuiz') abrirQuiz(m.id);
+      else if (m.t === 'menu') irMenu();
+      else if (m.t === 'comecar') { if (jogo.baralho.length) abrirPergunta(0); }
       else if (m.t === 'revelar') revelar();
       else if (m.t === 'placar') mostrarPlacar();
       else if (m.t === 'proxima') proxima();
@@ -299,6 +388,20 @@ wss.on('connection', (ws) => {
       else if (m.t === 'remover') removerJogador(m.nome);
       else if (m.t === 'idioma' && (m.v === 'pt' || m.v === 'en')) {
         jogo.idioma = m.v;
+        transmitir();
+      } else if (m.t === 'pegarQuiz') {
+        ws.send(JSON.stringify({ t: 'quiz', quiz: armazem.pegar(m.id) }));
+      } else if (m.t === 'salvarQuiz') {
+        const v = validarQuiz(m.quiz);
+        if (v.erro) return ws.send(JSON.stringify({ t: 'erro', erro: 'invalido', campo: v.erro }));
+        const salvo = await armazem.salvar(v.quiz);
+        ws.send(JSON.stringify({ t: 'salvo', id: salvo.id }));
+        transmitir();
+      } else if (m.t === 'excluirQuiz') {
+        if (m.id === jogo.quizId && jogo.fase !== 'menu') {
+          return ws.send(JSON.stringify({ t: 'erro', erro: 'em-uso' }));
+        }
+        await armazem.excluir(m.id);
         transmitir();
       }
       return;
@@ -354,8 +457,12 @@ setInterval(() => {
   if (jogo.fase === 'pergunta') transmitir();
 }, 1000);
 
+const persistencia = await armazem.iniciar();
 servidor.listen(PORTA, () => {
-  console.log(`quiz no ar em http://localhost:${PORTA}  ·  apresentador em /host?k=${CHAVE_HOST}`);
+  console.log(
+    `quiz no ar em http://localhost:${PORTA}  ·  apresentador em /host?k=${CHAVE_HOST}` +
+      `  ·  quizzes: ${armazem.listar().length} (${persistencia})`,
+  );
 });
 
 export { servidor, jogo };

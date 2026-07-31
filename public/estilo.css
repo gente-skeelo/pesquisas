@@ -1,12 +1,16 @@
-/* Quiz do Skee — estilo compartilhado entre a tela grande e o celular */
+/* Quiz do Skee — estilo compartilhado entre a tela grande e o celular.
+   PALETA SKEELO: ajuste os tons oficiais da marca aqui, o resto acompanha. */
 
 :root {
-  --noite:  #1b1030;
-  --noite2: #2a1746;
+  --skeelo:       #7b2ff2;   /* roxo da marca */
+  --skeelo-claro: #a45cff;
+  --skeelo-fundo: #150a26;   /* quase-preto arroxeado */
+  --skeelo-fundo2:#241040;
+
   --carta:  rgba(255, 255, 255, .07);
   --borda:  rgba(255, 255, 255, .14);
-  --creme:  #fff6e5;
-  --milho:  #ffc93c;
+  --creme:  #f7f2ff;
+  --milho:  #ffc93c;         /* acento quente (pontos, destaques) */
   --fogo:   #ff6b35;
   --verde:  #06d6a0;
   --azul:   #4cc9f0;
@@ -31,9 +35,9 @@ body {
   font-family: var(--fonte);
   color: var(--creme);
   background:
-    radial-gradient(1200px 700px at 20% -10%, #3a1f5e 0%, transparent 60%),
-    radial-gradient(900px 600px at 100% 0%, #4a1d3f 0%, transparent 55%),
-    var(--noite);
+    radial-gradient(1100px 700px at 15% -10%, #3c1a6e 0%, transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, #2c1257 0%, transparent 55%),
+    var(--skeelo-fundo);
   background-attachment: fixed;
   padding-top: 18px;                 /* espaço das bandeirinhas */
   -webkit-text-size-adjust: 100%;
@@ -54,10 +58,10 @@ body {
   height: 100%;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
-.bandeirinhas i:nth-child(4n+1) { background: var(--rosa); }
+.bandeirinhas i:nth-child(4n+1) { background: var(--skeelo); }
 .bandeirinhas i:nth-child(4n+2) { background: var(--milho); }
 .bandeirinhas i:nth-child(4n+3) { background: var(--verde); }
-.bandeirinhas i:nth-child(4n+4) { background: var(--azul); }
+.bandeirinhas i:nth-child(4n+4) { background: var(--rosa); }
 
 .envelope {
   max-width: 1120px;
@@ -80,10 +84,19 @@ p { line-height: 1.5; }
   font-size: .78rem;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: var(--milho);
-  opacity: .85;
+  color: var(--skeelo-claro);
+  font-weight: 700;
   margin-bottom: .4rem;
 }
+
+/* wordmark tipográfico da skeelo */
+.logo-skeelo {
+  font-weight: 800;
+  letter-spacing: -.02em;
+  text-transform: lowercase;
+  color: var(--creme);
+}
+.logo-skeelo b { color: var(--skeelo-claro); }
 
 .cartao {
   background: var(--carta);
@@ -96,20 +109,28 @@ p { line-height: 1.5; }
 .botao {
   font: inherit;
   font-weight: 700;
-  color: var(--noite);
-  background: var(--milho);
+  color: #fff;
+  background: linear-gradient(135deg, var(--skeelo), var(--skeelo-claro));
   border: 0;
   border-radius: 999px;
   padding: .85rem 1.6rem;
   cursor: pointer;
+  box-shadow: 0 6px 18px rgba(123, 47, 242, .35);
   transition: transform .12s ease, filter .12s ease;
 }
-.botao:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.06); }
-.botao:disabled { opacity: .45; cursor: not-allowed; }
+.botao:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+.botao:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 .botao.fantasma {
   background: transparent;
   color: var(--creme);
   border: 1px solid var(--borda);
+  box-shadow: none;
+}
+.botao.perigo {
+  background: transparent;
+  color: var(--rosa);
+  border: 1px solid var(--rosa);
+  box-shadow: none;
 }
 
 .campo {
@@ -121,7 +142,7 @@ p { line-height: 1.5; }
   border-radius: 14px;
   padding: .9rem 1rem;
 }
-.campo:focus { outline: 2px solid var(--milho); outline-offset: 1px; }
+.campo:focus { outline: 2px solid var(--skeelo-claro); outline-offset: 1px; }
 
 /* alternativas */
 .opcoes {

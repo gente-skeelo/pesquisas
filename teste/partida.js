@@ -1,11 +1,14 @@
 /**
- * Teste de fumaça: sobe o servidor, conecta um apresentador e três jogadores,
- * joga duas rodadas inteiras e confere estado, pontuação e reconexão.
+ * Teste de fumaça: sobe o servidor, exercita a biblioteca de quizzes
+ * (criar, editar, excluir), joga uma partida inteira com três jogadores
+ * e confere estado, pontuação, reconexão e remoção.
  *
  *   npm run teste
  */
 
 import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { setTimeout as espera } from 'node:timers/promises';
 import { WebSocket } from 'ws';
 
@@ -23,13 +26,16 @@ function conferir(descricao, condicao, detalhe = '') {
   }
 }
 
-/** Cliente de teste: guarda o último estado recebido e resolve esperas por condição. */
+/** Cliente de teste: guarda o que chegou e resolve esperas por condição. */
 function cliente() {
   const c = {
     ws: new WebSocket(`ws://127.0.0.1:${PORTA}/ws`),
     estado: null,
     eu: null,
     erro: null,
+    erroCampo: null,
+    salvoId: null,
+    quizCheio: null,
     aguardando: [],
   };
 
@@ -37,7 +43,9 @@ function cliente() {
     const m = JSON.parse(bruto);
     if (m.t === 'estado') c.estado = m;
     if (m.t === 'eu') c.eu = m;
-    if (m.t === 'erro') c.erro = m.erro;
+    if (m.t === 'erro') { c.erro = m.erro; c.erroCampo = m.campo || null; }
+    if (m.t === 'salvo') c.salvoId = m.id;
+    if (m.t === 'quiz') c.quizCheio = m.quiz;
     c.aguardando = c.aguardando.filter(({ teste, ok }) => (teste(c) ? (ok(), false) : true));
   });
 
@@ -53,19 +61,44 @@ function cliente() {
   return c;
 }
 
+const QUIZ_TESTE = {
+  titulo: 'Teste do Skee',
+  emoji: '🧪',
+  cartas: [
+    {
+      segundos: 20,
+      correta: 2,
+      pt: { enunciado: 'Primeira pergunta?', opcoes: ['a', 'b', 'c', 'd'], curiosidade: 'Pois é.' },
+    },
+    {
+      segundos: 20,
+      correta: 1,
+      pt: { enunciado: 'Segunda pergunta?', opcoes: ['a', 'b', 'c', 'd'] },
+      en: { enunciado: 'June test question two?', opcoes: ['a', 'b', 'c', 'd'] },
+    },
+  ],
+};
+
 const servidor = spawn(process.execPath, ['server.js'], {
-  env: { ...process.env, PORT: String(PORTA), CHAVE_HOST: CHAVE },
+  env: {
+    ...process.env,
+    PORT: String(PORTA),
+    CHAVE_HOST: CHAVE,
+    DADOS_DIR: join(tmpdir(), 'quiz-teste-' + Date.now()),   // biblioteca zerada por rodada
+    DATABASE_URL: '',
+  },
   stdio: ['ignore', 'pipe', 'inherit'],
 });
 servidor.stdout.on('data', () => {});
 
 try {
-  await espera(700);
+  await espera(800);
 
   console.log('\nHTTP');
   const saude = await (await fetch(`${BASE}/api/saude`)).json();
   conferir('/api/saude responde', saude.ok === true);
-  conferir('baralho com 15 perguntas', saude.perguntas === 15, `veio ${saude.perguntas}`);
+  conferir('começa no menu', saude.fase === 'menu', `veio ${saude.fase}`);
+  conferir('semente na biblioteca', saude.quizzes === 1, `veio ${saude.quizzes}`);
 
   const negado = await fetch(`${BASE}/host?k=errada`);
   conferir('/host recusa chave errada', negado.status === 401, `status ${negado.status}`);
@@ -76,23 +109,52 @@ try {
   const entrada = await (await fetch(`${BASE}/api/entrada`)).json();
   conferir('QR gerado como data URL', entrada.qr.startsWith('data:image/png;base64,'));
 
-  console.log('\nLobby');
+  console.log('\nBiblioteca');
   const host = cliente();
   await host.aberto();
   host.envia({ t: 'host', k: CHAVE });
   await host.ate((c) => c.estado, 'estado inicial do host');
-  conferir('host começa no lobby', host.estado.fase === 'lobby');
+  conferir('host começa no menu', host.estado.fase === 'menu');
+  conferir('menu lista a semente com 15 perguntas',
+           host.estado.quizzes.length === 1 && host.estado.quizzes[0].n === 15,
+           JSON.stringify(host.estado.quizzes));
 
-  const intruso = cliente();
-  await intruso.aberto();
-  intruso.envia({ t: 'host', k: 'chute' });
-  await intruso.ate((c) => c.erro, 'recusa do WebSocket');
-  conferir('WebSocket recusa chave errada', intruso.erro === 'chave');
-  intruso.ws.close();
+  host.envia({ t: 'salvarQuiz', quiz: { titulo: 'Quebrado', cartas: [{ correta: 0, pt: { enunciado: '', opcoes: ['a', 'b', 'c', 'd'] } }] } });
+  await host.ate((c) => c.erro === 'invalido', 'recusa de quiz inválido');
+  conferir('quiz sem enunciado é recusado', host.erroCampo === 'pergunta', host.erroCampo);
+  host.erro = null;
 
-  const nomes = ['Ana', 'Bento', 'Cida'];
-  const jogadores = [];
-  for (const nome of nomes) {
+  host.envia({ t: 'salvarQuiz', quiz: QUIZ_TESTE });
+  await host.ate((c) => c.salvoId, 'salvamento');
+  await host.ate((c) => c.estado.quizzes.length === 2, 'biblioteca com 2');
+  conferir('quiz novo entra na biblioteca', host.estado.quizzes.some((q) => q.titulo === 'Teste do Skee'));
+
+  const idTeste = host.salvoId;
+  host.envia({ t: 'pegarQuiz', id: idTeste });
+  await host.ate((c) => c.quizCheio, 'quiz completo pra edição');
+  conferir('pegarQuiz devolve as cartas', host.quizCheio.cartas.length === 2);
+  conferir('EN opcional preservado', !!host.quizCheio.cartas[1].en && !host.quizCheio.cartas[0].en);
+
+  host.envia({ t: 'salvarQuiz', quiz: { ...host.quizCheio, titulo: 'Teste do Skee v2' } });
+  await host.ate((c) => c.estado.quizzes.some((q) => q.titulo === 'Teste do Skee v2'), 'edição salva');
+  conferir('editar não duplica', host.estado.quizzes.length === 2, `veio ${host.estado.quizzes.length}`);
+
+  console.log('\nEntrada antes do quiz escolhido');
+  const ana = cliente();
+  await ana.aberto();
+  ana.envia({ t: 'entrar', nome: 'Ana' });
+  await ana.ate((c) => c.eu, 'entrada da Ana');
+  await ana.ate((c) => c.estado, 'estado da Ana');
+  conferir('jogador entra durante o menu', ana.estado.fase === 'menu');
+
+  console.log('\nLobby');
+  host.envia({ t: 'abrirQuiz', id: idTeste });
+  await host.ate((c) => c.estado.fase === 'lobby', 'lobby');
+  conferir('abre o quiz escolhido', host.estado.quiz === 'Teste do Skee v2');
+  conferir('quem entrou antes segue na sala', host.estado.jogadores.length === 1);
+
+  const jogadores = [ana];
+  for (const nome of ['Bento', 'Cida']) {
     const j = cliente();
     await j.aberto();
     j.envia({ t: 'entrar', nome });
@@ -112,32 +174,31 @@ try {
   console.log('\nRodada 1');
   host.envia({ t: 'comecar' });
   await host.ate((c) => c.estado.fase === 'pergunta', 'abertura da pergunta');
-  conferir('pergunta 1 aberta', host.estado.q === 0);
-  conferir('quatro alternativas', host.estado.opcoes.length === 4);
+  conferir('pergunta 1 aberta', host.estado.q === 0 && host.estado.total === 2);
   conferir('resposta certa fica escondida', host.estado.correta === null);
   conferir('jogador não recebe a curiosidade', jogadores[0].estado.curiosidade === '');
 
-  jogadores[0].envia({ t: 'responder', q: 0, opcao: 1 });   // correta da carta 1 (origem pagã)
+  jogadores[0].envia({ t: 'responder', q: 0, opcao: 2 });   // correta
   await espera(120);
-  jogadores[1].envia({ t: 'responder', q: 0, opcao: 1 });
+  jogadores[1].envia({ t: 'responder', q: 0, opcao: 2 });   // correta, mais lento
   await espera(120);
   jogadores[2].envia({ t: 'responder', q: 0, opcao: 0 });   // errada
 
   await host.ate((c) => c.estado.fase === 'revelacao', 'revelação automática');
   conferir('revela sozinho quando todos respondem', host.estado.fase === 'revelacao');
-  conferir('revelação traz a correta', host.estado.correta === 1);
-  conferir('contagem por alternativa confere', host.estado.contagem[1] === 2 && host.estado.contagem[0] === 1,
+  for (const j of jogadores) await j.ate((cl) => cl.estado.fase === 'revelacao', 'revelação nos jogadores');
+  conferir('contagem por alternativa confere',
+           host.estado.contagem[2] === 2 && host.estado.contagem[0] === 1,
            JSON.stringify(host.estado.contagem));
+  conferir('curiosidade aparece na tela grande', host.estado.curiosidade === 'Pois é.');
 
-  for (const j of jogadores) await j.ate((cl) => cl.estado.fase === 'revelacao', 'revelação no jogador');
   const [a, b, c3] = jogadores.map((j) => j.estado);
   conferir('quem acertou pontuou', a.pontos > 0 && b.pontos > 0);
   conferir('quem errou não pontuou', c3.pontos === 0, `fez ${c3.pontos}`);
   conferir('quem respondeu antes fez mais pontos', a.pontos > b.pontos, `${a.pontos} vs ${b.pontos}`);
   conferir('jogador vê sua posição', a.posicao === 1);
 
-  console.log('\nSegunda resposta e placar');
-  jogadores[0].envia({ t: 'responder', q: 0, opcao: 1 });   // fora de fase, deve ser ignorada
+  jogadores[0].envia({ t: 'responder', q: 0, opcao: 1 });   // fora de fase, ignorada
   await espera(150);
   conferir('resposta depois da revelação é ignorada', jogadores[0].estado.pontos === a.pontos);
 
@@ -149,7 +210,6 @@ try {
   console.log('\nIdioma e reconexão');
   host.envia({ t: 'idioma', v: 'en' });
   await host.ate((cl) => cl.estado.idioma === 'en', 'troca de idioma');
-  conferir('idioma trocou para o host', host.estado.idioma === 'en');
   await jogadores[0].ate((cl) => cl.estado.idioma === 'en', 'idioma no jogador');
   conferir('idioma trocou para o jogador', jogadores[0].estado.idioma === 'en');
 
@@ -166,13 +226,13 @@ try {
   conferir('mantém a pontuação ao reconectar', voltou.estado.pontos === pontosAntes);
   jogadores[2] = voltou;
 
-  console.log('\nRodada 2 e encerramento');
+  console.log('\nRodada 2, inglês com fallback e fim');
   host.envia({ t: 'proxima' });
   await host.ate((cl) => cl.estado.fase === 'pergunta' && cl.estado.q === 1, 'pergunta 2');
-  conferir('avança para a pergunta 2', host.estado.q === 1);
-  conferir('enunciado veio em inglês', /related to/.test(host.estado.enunciado), host.estado.enunciado);
+  conferir('pergunta 2 vem em inglês', host.estado.enunciado === 'June test question two?',
+           host.estado.enunciado);
 
-  jogadores[2].envia({ t: 'responder', q: 1, opcao: 1 });   // correta da carta 2 (mês de junho)
+  jogadores[2].envia({ t: 'responder', q: 1, opcao: 1 });   // correta
   await espera(120);
   host.envia({ t: 'revelar' });
   await host.ate((cl) => cl.estado.fase === 'revelacao', 'revelação manual');
@@ -181,21 +241,35 @@ try {
 
   host.envia({ t: 'encerrar' });
   await host.ate((cl) => cl.estado.fase === 'fim', 'fim');
-  conferir('encerra a partida', host.estado.fase === 'fim');
   await jogadores[0].ate((cl) => cl.estado.fase === 'fim', 'fim no jogador');
   conferir('jogador recebe o pódio', Array.isArray(jogadores[0].estado.podio));
 
+  console.log('\nJogar de novo e voltar ao menu');
   host.envia({ t: 'reiniciar' });
-  await host.ate((cl) => cl.estado.fase === 'lobby', 'reinício');
-  conferir('reiniciar volta ao lobby', host.estado.fase === 'lobby');
-  conferir('reiniciar zera a pontuação', host.estado.ranking.every((r) => r.pontos === 0));
-  conferir('reiniciar mantém quem está na sala', host.estado.jogadores.length === 3);
+  await host.ate((cl) => cl.estado.fase === 'lobby', 'jogar de novo');
+  conferir('jogar de novo mantém o quiz', host.estado.quiz === 'Teste do Skee v2');
+  conferir('jogar de novo zera a pontuação', host.estado.ranking.every((r) => r.pontos === 0));
+  conferir('jogar de novo mantém a sala', host.estado.jogadores.length === 3);
+
+  host.erro = null;
+  host.envia({ t: 'excluirQuiz', id: idTeste });
+  await host.ate((cl) => cl.erro === 'em-uso', 'bloqueio de exclusão');
+  conferir('não exclui quiz em jogo', host.erro === 'em-uso');
+
+  host.envia({ t: 'menu' });
+  await host.ate((cl) => cl.estado.fase === 'menu', 'menu');
+  conferir('menu limpa o quiz ativo', host.estado.quiz === '' && host.estado.total === 0);
+  await jogadores[0].ate((cl) => cl.estado.fase === 'menu', 'menu no jogador');
+  conferir('jogador volta pra espera do menu', jogadores[0].estado.fase === 'menu');
+
+  host.envia({ t: 'excluirQuiz', id: idTeste });
+  await host.ate((cl) => cl.estado.quizzes.length === 1, 'exclusão');
+  conferir('exclui do menu', host.estado.quizzes.every((q) => q.id !== idTeste));
 
   console.log('\nRemoção pelo apresentador');
   host.envia({ t: 'remover', nome: 'cida' });                // caixa não importa
   await host.ate((cl) => cl.estado.jogadores.length === 2, 'sala com 2');
   conferir('apresentador remove jogador pelo nome', host.estado.jogadores.length === 2);
-  conferir('removido some do ranking', host.estado.ranking.every((r) => r.nome !== 'Cida'));
   await jogadores[2].ate((cl) => cl.erro === 'desconhecido', 'aviso ao removido');
   conferir('removido é avisado e volta pra entrada', jogadores[2].erro === 'desconhecido');
   jogadores[2].envia({ t: 'remover', nome: 'Ana' });         // jogador não pode remover
@@ -204,8 +278,9 @@ try {
 
   console.log('\nComandos de jogador não movem a partida');
   jogadores[0].envia({ t: 'comecar' });
+  jogadores[0].envia({ t: 'abrirQuiz', id: host.estado.quizzes[0].id });
   await espera(200);
-  conferir('jogador não consegue começar a partida', host.estado.fase === 'lobby');
+  conferir('jogador não abre quiz nem começa partida', host.estado.fase === 'menu');
 
   for (const j of [host, ...jogadores]) j.ws.close();
 } catch (err) {

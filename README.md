@@ -1,86 +1,64 @@
-# Quiz do Skee: Festas Juninas pelo mundo
+# Quiz do Skee — centralizador de quizzes da Skeelo
 
-Quiz ao vivo estilo Kahoot: o apresentador projeta a tela grande com QR code,
-a galera entra pelo celular, responde contra o relógio e o pódio sai no final.
-Bilíngue PT-BR/EN, com troca de idioma ao vivo.
+App de quiz ao vivo estilo Kahoot: o apresentador projeta a tela grande, a galera joga
+pelo celular via QR code. Vários quizzes ficam salvos numa biblioteca — dá pra criar,
+editar e reapresentar quantas vezes quiser.
 
-Um processo Node, estado em memória, sem banco e sem build step — sobe direto
-em Railway, Render, Fly ou qualquer lugar que rode `npm start`.
+- **Jogadores:** `https://SEU-DOMINIO/`
+- **Apresentador:** `https://SEU-DOMINIO/host?k=CHAVE_HOST`
+- **Saúde:** `https://SEU-DOMINIO/api/saude`
 
-## Rodando
+## Como funciona
+
+Node + Express + WebSocket, sem build step. A partida em andamento vive em memória
+(um redeploy derruba a sala — não faça deploy durante o jogo). A **biblioteca de
+quizzes** persiste:
+
+- com `DATABASE_URL` definida → **Postgres** (tabela `quizzes`, criada sozinha);
+- sem ela → arquivo `dados/quizzes.json` (bom localmente; no Railway se perde a cada deploy).
+
+No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
+(15 perguntas, `baralho.js`) é semeado automaticamente.
+
+### Fluxo do apresentador
+
+1. **Central de quizzes** — cards com os quizzes salvos: ▶ Apresentar, Editar, ✕ Excluir,
+   ou ＋ Novo quiz.
+2. **Editor** — título, emoji e perguntas: enunciado, 4 alternativas (bolinha marca a
+   correta), tempo (5–120 s), curiosidade opcional e tradução EN opcional (sem tradução,
+   a pergunta cai no PT quando o idioma do jogo é EN).
+3. **Lobby** — QR code + quem já chegou (clique num nome pra remover a pessoa).
+4. **Partida** — botão principal (ou barra de espaço) conduz: Revelar → Placar → Próxima.
+   Seletor PT/EN ao vivo no canto.
+5. **Fim** — pódio animado (3º, 2º, 1º com coroa e confete), "Jogar de novo" repete o
+   mesmo quiz com a sala mantida; "Menu" volta pra central.
+
+### Pontuação
+
+Acertou: **500** + até **500** proporcionais ao tempo restante. Errou ou não respondeu: 0.
+Uma resposta por pergunta, a primeira vale. A rodada fecha no tempo ou quando todos
+respondem.
+
+## Rodar local
 
 ```bash
 npm install
-npm start          # http://localhost:3000
+npm start            # http://localhost:3000 · /host?k=arraia
+npm run teste        # teste de fumaça (50 verificações)
 ```
 
-- **Jogador:** abre a raiz (`/`), digita o nome e espera.
-- **Apresentador:** abre `/host?k=arraia` (a chave vem de `CHAVE_HOST`).
-  A tela mostra o QR de entrada; o botão principal conduz a partida inteira
-  (espaço ou Enter também avançam).
+## Variáveis de ambiente
 
-## Configuração
-
-Variáveis de ambiente (veja `.env.example`):
-
-| Variável | Padrão | O que faz |
-| --- | --- | --- |
-| `PORT` | `3000` | porta HTTP — Railway/Render injetam sozinhos |
-| `CHAVE_HOST` | `arraia` | chave do modo apresentador; **troque em produção**, o repo é público |
-| `URL_PUBLICA` | — | força a URL do QR code (útil atrás de domínio próprio) |
-
-## Fluxo da partida
-
-```
-lobby → pergunta → revelação → placar → … → fim
-```
-
-- Pontuação: 500 por acertar + até 500 pela rapidez (proporcional ao tempo restante).
-- A revelação dispara sozinha quando o tempo acaba ou quando todos os conectados respondem.
-- A primeira resposta de cada jogador é a que vale.
-- O idioma (PT/EN) muda na barra do apresentador e reflete em todas as telas na hora.
-- Se o celular travar ou recarregar, o jogador volta com o mesmo nome e pontuação
-  (token no `localStorage`).
-- **Reiniciar** zera pontos e volta ao lobby mantendo quem já está na sala.
-
-## Perguntas
-
-O baralho está em `baralho.js`: 15 perguntas fornecidas pela organização (PT
-canônico, EN traduzido), com alternativas na mesma ordem nos dois idiomas e
-curiosidade opcional exibida na revelação. Para editar, é só mexer no array —
-nenhuma outra parte do código conhece o conteúdo.
-
-## Arquitetura
-
-| Arquivo | Papel |
+| Variável | O que faz |
 | --- | --- |
-| `server.js` | Express + WebSocket; máquina de estados, relógio e pontuação vivem aqui |
-| `baralho.js` | as perguntas |
-| `views/host.html` + `public/host.js` | tela do apresentador (servida só com a chave) |
-| `public/index.html` + `public/jogador.js` | tela do jogador |
-| `public/estilo.css` | visual compartilhado (bandeirinhas incluídas) |
-| `teste/partida.js` | teste de fumaça que joga uma partida completa |
+| `CHAVE_HOST` | chave do modo apresentador (`?k=...`). Padrão `arraia` — troque em produção |
+| `PORT` | porta HTTP (o Railway injeta sozinho) |
+| `DATABASE_URL` | Postgres pra biblioteca sobreviver a deploy (no Railway: Variables → Add Reference → Postgres) |
+| `URL_PUBLICA` | força a URL do QR code atrás de domínio próprio (opcional) |
+| `DADOS_DIR` | pasta do fallback em arquivo (padrão `./dados`) |
 
-O servidor é a fonte da verdade: clientes só mandam intenções (`entrar`,
-`responder`, `proxima`…) e recebem o estado já filtrado por papel — o jogador
-nunca recebe a resposta correta antes da revelação.
+## Deploy no Railway
 
-Estado em memória significa: **uma sala por instância** e a partida morre se o
-processo reiniciar. Para uma festa, é exatamente o suficiente.
-
-## Teste
-
-```bash
-npm run teste
-```
-
-Sobe o servidor numa porta de teste e verifica o fluxo completo: entrada, chave
-errada, nome duplicado, rodadas, pontuação por rapidez, troca de idioma,
-reconexão e reinício.
-
-## Deploy (Railway/Render)
-
-1. Conecte o repositório e o branch.
-2. Defina `CHAVE_HOST` nas variáveis de ambiente do serviço.
-3. Build padrão de Node já serve: `npm install` + `npm start`.
-4. Abra `https://SEU-APP/host?k=SUA_CHAVE` na tela grande e pronto.
+`railway.json` já fixa `npm start` e o healthcheck em `/api/saude`. Gere o domínio em
+**Settings → Networking** apontando pra porta que aparece no log de deploy. A paleta da
+marca fica em `public/estilo.css` (`:root`), num painel só de variáveis.

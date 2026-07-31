@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1b1030">
-  <title>Apresentador · Quiz do Skee</title>
+  <meta name="theme-color" content="#150a26">
+  <title>Quiz do Skee · Central de quizzes</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎪</text></svg>">
   <link rel="stylesheet" href="/estilo.css">
   <style>
@@ -23,27 +23,71 @@
       position: fixed; left: 0; right: 0; bottom: 0;
       display: flex; gap: 12px; align-items: center; justify-content: center;
       padding: 14px clamp(12px, 3vw, 28px);
-      background: rgba(12, 6, 24, .82);
+      background: rgba(14, 6, 28, .85);
       border-top: 1px solid var(--borda);
       backdrop-filter: blur(10px);
       z-index: 40;
     }
     .barra-controle .esquerda { margin-right: auto; display: flex; gap: 10px; align-items: center; }
+    .barra-controle.escondida { display: none; }
 
     .seletor { display: inline-flex; border: 1px solid var(--borda); border-radius: 999px; overflow: hidden; }
     .seletor button {
       font: 600 .9rem var(--fonte); color: var(--creme); background: transparent;
       border: 0; padding: .5rem .9rem; cursor: pointer;
     }
-    .seletor button.on { background: var(--milho); color: var(--noite); }
+    .seletor button.on { background: var(--skeelo); color: #fff; }
 
+    /* ---------- menu de quizzes ---------- */
+    .grade-quizzes {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      margin-top: 1.6rem;
+    }
+    .card-quiz {
+      display: flex; flex-direction: column; gap: .5rem;
+      background: var(--carta); border: 1px solid var(--borda);
+      border-radius: 20px; padding: 20px;
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .card-quiz:hover { transform: translateY(-3px); border-color: var(--skeelo-claro); }
+    .card-quiz .emoji { font-size: 2.2rem; line-height: 1; }
+    .card-quiz .titulo { font-weight: 800; font-size: 1.15rem; }
+    .card-quiz .acoes { display: flex; gap: 8px; margin-top: auto; padding-top: .8rem; }
+    .card-quiz .acoes .botao { padding: .55rem 1rem; font-size: .92rem; }
+    .card-novo {
+      align-items: center; justify-content: center; text-align: center;
+      border-style: dashed; cursor: pointer; min-height: 170px;
+      color: var(--skeelo-claro); font-weight: 700;
+    }
+    .card-novo:hover { background: rgba(123, 47, 242, .12); }
+    .card-novo .mais { font-size: 2.4rem; line-height: 1; }
+
+    /* ---------- editor ---------- */
+    .ed-carta { border: 1px solid var(--borda); border-radius: 20px; margin: 18px 0; padding: 20px; }
+    .ed-carta legend {
+      font-weight: 800; color: var(--skeelo-claro);
+      padding: 0 .6rem; letter-spacing: .04em;
+    }
+    .ed-linha { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .ed-op { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+    .ed-op input[type="radio"] { width: 20px; height: 20px; accent-color: var(--verde); flex: none; }
+    .ed-op .forma { width: 1.6rem; text-align: center; flex: none; }
+    .ed-carta textarea.campo { resize: vertical; min-height: 58px; }
+    .ed-carta details { margin-top: .8rem; }
+    .ed-carta summary { cursor: pointer; color: var(--skeelo-claro); font-weight: 600; }
+    .ed-rodape { display: flex; justify-content: space-between; margin-top: .8rem; }
+    .ed-acoes { display: flex; gap: 12px; margin: 1.4rem 0 3rem; flex-wrap: wrap; }
+    .ed-erro { color: var(--rosa); font-weight: 600; min-height: 1.4em; }
+    .campo-curto { width: 110px; }
+
+    /* ---------- jogo ---------- */
     .enunciado-grande { font-size: clamp(1.4rem, 3.4vw, 2.6rem); }
     .contagem { position: relative; }
     .contagem .n {
       position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
       font-size: 1.5rem; font-weight: 800;
     }
-
     .fichas { display: flex; flex-wrap: wrap; gap: 8px; }
     .ficha {
       font: 600 .95rem var(--fonte); color: var(--creme);
@@ -53,7 +97,6 @@
     }
     .ficha:hover { background: rgba(239, 71, 111, .28); border-color: var(--rosa); }
     .ficha.fora { opacity: .4; text-decoration: line-through; }
-
     .relogio {
       font-size: clamp(2.4rem, 7vw, 4.4rem); font-weight: 800;
       font-variant-numeric: tabular-nums; color: var(--milho); line-height: 1;
@@ -63,35 +106,62 @@
       font-size: clamp(1rem, 1.8vw, 1.25rem); margin-top: 1.4rem;
     }
 
-    /* pódio estilo Kahoot */
+    /* ---------- pódio ---------- */
     #confete { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
     .podio-palco {
       display: flex; align-items: flex-end; justify-content: center;
-      gap: clamp(10px, 2vw, 22px); max-width: 780px;
-      margin: 2rem auto 1.4rem; min-height: 360px;
+      gap: clamp(10px, 2vw, 26px); max-width: 820px;
+      margin: 1.6rem auto 0; min-height: 400px;
+      background: radial-gradient(420px 200px at 50% 100%, rgba(123, 47, 242, .28), transparent 70%);
     }
-    .coluna { flex: 1; max-width: 230px; opacity: 0; transform: translateY(40px); transition: opacity .5s ease, transform .5s ease; }
+    .coluna { flex: 1; max-width: 240px; opacity: 0; transform: translateY(40px); transition: opacity .5s ease, transform .5s ease; }
     .coluna.sobe { opacity: 1; transform: none; }
-    .coluna .medalha { font-size: clamp(2rem, 5vw, 3rem); }
-    .coluna.sobe .medalha { animation: pula .7s ease; }
+    .coluna .coroa {
+      font-size: 2.2rem; height: 2.6rem; line-height: 2.6rem;
+      opacity: 0; transform: translateY(-30px);
+    }
+    .c1.sobe .coroa { animation: cai .6s ease .55s forwards; }
+    .coluna .avatar {
+      width: clamp(56px, 7vw, 84px); height: clamp(56px, 7vw, 84px);
+      margin: 0 auto .5rem; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 800; color: #16111f;
+      border: 3px solid var(--creme); box-shadow: 0 6px 20px rgba(0, 0, 0, .4);
+    }
+    .c1 .avatar { background: linear-gradient(135deg, #ffd76a, #ff9f1c); }
+    .c2 .avatar { background: linear-gradient(135deg, #eef2fa, #9fb0c8); }
+    .c3 .avatar { background: linear-gradient(135deg, #f2b98c, #c97a3d); }
     .coluna .quem { font-weight: 800; font-size: clamp(1rem, 2.4vw, 1.4rem); word-break: break-word; }
-    .coluna .qtd { font-weight: 800; color: var(--milho); font-variant-numeric: tabular-nums; margin-bottom: .5rem; }
+    .coluna .qtd { font-weight: 800; color: var(--milho); font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
     .coluna .bloco {
-      border-radius: 16px 16px 0 0;
-      display: flex; justify-content: center; padding-top: .5rem;
-      font-size: 2.2rem; font-weight: 800; color: rgba(0, 0, 0, .35);
-      transform-origin: bottom; transform: scaleY(0); transition: transform .6s cubic-bezier(.2, .9, .3, 1.2);
+      position: relative; overflow: hidden;
+      border-radius: 18px 18px 0 0;
+      display: flex; justify-content: center; padding-top: .6rem;
+      font-size: 2.4rem; font-weight: 800; color: rgba(0, 0, 0, .35);
+      transform-origin: bottom; transform: scaleY(0);
+      transition: transform .6s cubic-bezier(.2, .9, .3, 1.2);
+    }
+    .coluna .bloco::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .35) 50%, transparent 60%);
+      transform: translateX(-120%);
     }
     .coluna.sobe .bloco { transform: none; }
-    .c1 .bloco { height: 230px; background: linear-gradient(180deg, #ffc93c, #ff9f1c); }
-    .c2 .bloco { height: 165px; background: linear-gradient(180deg, #dfe6f2, #8d99ae); }
-    .c3 .bloco { height: 120px; background: linear-gradient(180deg, #e8a87c, #b5651d); }
-    @keyframes pula {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.5) rotate(-8deg); }
-      70% { transform: scale(.95); }
-      100% { transform: scale(1); }
+    .coluna.sobe .bloco::after { animation: brilho 1.4s ease .7s; }
+    .c1 .bloco { height: 250px; background: linear-gradient(180deg, #ffc93c, #ff9f1c); }
+    .c2 .bloco { height: 175px; background: linear-gradient(180deg, #dfe6f2, #8d99ae); }
+    .c3 .bloco { height: 125px; background: linear-gradient(180deg, #e8a87c, #b5651d); }
+    .palco-chao {
+      max-width: 860px; height: 12px; margin: 0 auto 1.6rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(123, 47, 242, .6), transparent);
     }
+    @keyframes cai {
+      from { opacity: 0; transform: translateY(-30px) rotate(-14deg); }
+      60%  { opacity: 1; transform: translateY(4px) rotate(4deg); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes brilho { to { transform: translateX(120%); } }
   </style>
 </head>
 <body>
@@ -99,10 +169,42 @@
 
   <main class="envelope">
 
-    <!-- lobby -->
-    <section id="tela-lobby" class="tela ativa">
+    <!-- menu / central -->
+    <section id="tela-menu" class="tela">
       <p class="marca">Quiz do Skee</p>
-      <h1 id="h-titulo" style="font-size:clamp(1.8rem,5vw,3.2rem)">Festas Juninas pelo mundo</h1>
+      <h1 style="font-size:clamp(1.8rem,5vw,3rem)">Central de quizzes <span class="logo-skeelo">s<b>k</b>eelo</span></h1>
+      <p class="discreto">Escolha um quiz pra apresentar, edite um existente ou crie um novo.</p>
+      <div class="grade-quizzes" id="grade-quizzes"></div>
+    </section>
+
+    <!-- editor -->
+    <section id="tela-editor" class="tela">
+      <p class="marca">Editor</p>
+      <h1 id="ed-cabecalho" style="font-size:clamp(1.6rem,4vw,2.4rem)">Novo quiz</h1>
+      <div class="cartao">
+        <div class="ed-linha">
+          <label style="flex:1;min-width:240px">Título
+            <input id="ed-titulo" class="campo" maxlength="60" placeholder="Ex.: Festas Juninas pelo mundo">
+          </label>
+          <label>Emoji
+            <input id="ed-emoji" class="campo campo-curto centro" maxlength="4" placeholder="🎯">
+          </label>
+        </div>
+      </div>
+      <div id="ed-cartas"></div>
+      <div class="ed-acoes">
+        <button class="botao fantasma" id="ed-add">＋ Adicionar pergunta</button>
+        <span style="flex:1"></span>
+        <button class="botao fantasma" id="ed-cancelar">Cancelar</button>
+        <button class="botao" id="ed-salvar">Salvar quiz</button>
+      </div>
+      <p class="ed-erro" id="ed-erro"></p>
+    </section>
+
+    <!-- lobby -->
+    <section id="tela-lobby" class="tela">
+      <p class="marca">Quiz do Skee</p>
+      <h1 id="h-titulo" style="font-size:clamp(1.8rem,5vw,3.2rem)"></h1>
       <div class="duas" style="margin-top:1.4rem">
         <div class="cartao centro">
           <img id="qr" alt="QR code de entrada">
@@ -141,13 +243,12 @@
     <section id="tela-fim" class="tela centro">
       <h1 id="h-fim" style="font-size:clamp(1.8rem,5vw,3rem)">Fim de festa!</h1>
       <div class="podio-palco" id="podio-palco"></div>
+      <div class="palco-chao"></div>
       <ol class="lista" id="podio" style="max-width:640px;margin:0 auto;text-align:left"></ol>
     </section>
   </main>
 
-  <canvas id="confete" aria-hidden="true"></canvas>
-
-  <div class="barra-controle">
+  <div class="barra-controle" id="barra-controle">
     <div class="esquerda">
       <div class="seletor" role="group" aria-label="Idioma">
         <button id="bt-pt" class="on">PT</button>
@@ -155,9 +256,11 @@
       </div>
       <span class="discreto" id="situacao"></span>
     </div>
-    <button class="botao fantasma" id="bt-reiniciar">Reiniciar</button>
+    <button class="botao fantasma" id="bt-menu">Menu</button>
     <button class="botao" id="bt-principal">Começar</button>
   </div>
+
+  <canvas id="confete" aria-hidden="true"></canvas>
 
   <script>window.CHAVE = decodeURIComponent('__CHAVE__');</script>
   <script src="/confete.js"></script>

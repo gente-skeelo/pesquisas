@@ -9,6 +9,7 @@ const T = {
     rotNome: 'Seu nome',
     entrar: 'Entrar',
     ola: (n) => `Beleza, ${n}!`,
+    escolhendo: 'O apresentador está escolhendo o quiz…',
     espera: 'Aguarde o apresentador começar.',
     naSala: (n) => `${n} ${n === 1 ? 'pessoa' : 'pessoas'} no arraiá`,
     pergunta: (i, t) => `Pergunta ${i} de ${t}`,
@@ -23,7 +24,7 @@ const T = {
     erroNome: 'Escreva um nome.',
     erroRepetido: 'Esse nome já está na sala. Escolha outro.',
     caiu: 'Conexão caiu. Reconectando…',
-    rodape: 'Quiz do Skee · Festas Juninas pelo mundo',
+    rodape: 'Quiz do Skee · skeelo',
   },
   en: {
     titulo: 'June festivals around the world',
@@ -31,6 +32,7 @@ const T = {
     rotNome: 'Your name',
     entrar: 'Join',
     ola: (n) => `You're in, ${n}!`,
+    escolhendo: 'The host is picking the quiz…',
     espera: 'Wait for the host to start.',
     naSala: (n) => `${n} ${n === 1 ? 'person' : 'people'} in the room`,
     pergunta: (i, t) => `Question ${i} of ${t}`,
@@ -45,7 +47,7 @@ const T = {
     erroNome: 'Type a name.',
     erroRepetido: 'That name is taken. Pick another.',
     caiu: 'Connection dropped. Reconnecting…',
-    rodape: 'Quiz do Skee · June festivals around the world',
+    rodape: 'Quiz do Skee · skeelo',
   },
 };
 
@@ -119,7 +121,7 @@ function pintar(e) {
   const t = T[idioma];
 
   document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'en';
-  $('tit-entrar').textContent = t.titulo;
+  $('tit-entrar').textContent = e.quiz ? `${e.emoji || ''} ${e.quiz}`.trim() : 'Quiz do Skee';
   $('sub-entrar').textContent = t.sub;
   $('rot-nome').textContent = t.rotNome;
   $('bt-entrar').textContent = t.entrar;
@@ -129,9 +131,18 @@ function pintar(e) {
 
   if (e.fase !== 'fim') festejei = false;
 
-  if (e.fase === 'lobby') {
+  if (e.fase === 'menu') {
+    $('emoji-espera').textContent = '🍿';
     $('ola').textContent = t.ola(e.nome || meuNome);
-    $('txt-espera').textContent = t.espera;
+    $('txt-espera').textContent = t.escolhendo;
+    $('contagem-jogadores').textContent = t.naSala(e.jogadores);
+    return mostrar('espera');
+  }
+
+  if (e.fase === 'lobby') {
+    $('emoji-espera').textContent = e.emoji || '🌽';
+    $('ola').textContent = t.ola(e.nome || meuNome);
+    $('txt-espera').textContent = e.quiz ? `${e.quiz} — ${t.espera}` : t.espera;
     $('contagem-jogadores').textContent = t.naSala(e.jogadores);
     return mostrar('espera');
   }
