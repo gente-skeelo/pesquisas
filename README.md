@@ -22,12 +22,13 @@ No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
 
 ### Fluxo do apresentador
 
-1. **Central de quizzes** — cards com os quizzes salvos: ▶ Apresentar, Editar, ✕ Excluir,
-   ou ＋ Novo quiz.
+1. **Central de quizzes** — cards com os quizzes salvos: ▶ Apresentar, Editar, Duplicar,
+   ✕ Excluir, ou ＋ Novo quiz.
 2. **Editor** — título, emoji e perguntas: enunciado, 4 alternativas (bolinha marca a
    correta), tempo (5–120 s), curiosidade opcional e tradução EN opcional (sem tradução,
    a pergunta cai no PT quando o idioma do jogo é EN).
-3. **Lobby** — QR code + quem já chegou (clique num nome pra remover a pessoa).
+3. **Lobby** — **PIN de 6 dígitos** em destaque + QR code (que já leva o PIN embutido) e
+   quem já chegou (clique num nome pra remover a pessoa). Cada partida gera um PIN novo.
 4. **Partida** — botão principal (ou barra de espaço) conduz: Revelar → Placar → Próxima.
    Seletor PT/EN ao vivo no canto.
 5. **Fim** — pódio animado (3º, 2º, 1º com coroa e confete), "Jogar de novo" repete o
@@ -35,7 +36,8 @@ No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
 
 ### Pontuação
 
-Acertou: **500** + até **500** proporcionais ao tempo restante. Errou ou não respondeu: 0.
+Acertou: **500** + até **500** proporcionais ao tempo restante + **bônus de sequência**
+(100 por acerto seguido, teto de 500). Errou ou não respondeu: 0 e a sequência zera.
 Uma resposta por pergunta, a primeira vale. A rodada fecha no tempo ou quando todos
 respondem.
 
@@ -44,7 +46,7 @@ respondem.
 ```bash
 npm install
 npm start            # http://localhost:3000 · /host?k=arraia
-npm run teste        # teste de fumaça (50 verificações)
+npm run teste        # teste de fumaça (62 verificações)
 ```
 
 ## Variáveis de ambiente
@@ -56,6 +58,11 @@ npm run teste        # teste de fumaça (50 verificações)
 | `DATABASE_URL` | Postgres pra biblioteca sobreviver a deploy (no Railway: Variables → Add Reference → Postgres) |
 | `URL_PUBLICA` | força a URL do QR code atrás de domínio próprio (opcional) |
 | `DADOS_DIR` | pasta do fallback em arquivo (padrão `./dados`) |
+
+## Como os jogadores entram
+
+Pela raiz do site, digitando o **PIN** que está na tela do apresentador — ou escaneando o
+QR, que abre a página com o PIN já preenchido. Sem sala aberta, ninguém entra.
 
 ## Deploy no Railway
 

@@ -27,12 +27,17 @@ const URL_PUBLICA    = process.env.URL_PUBLICA || '';
 const PONTOS_BASE    = 500;   // por acertar
 const PONTOS_RAPIDEZ = 500;   // extra proporcional ao tempo que sobrou
 const PAUSA_FIM      = 700;   // respiro antes de revelar quando todos já responderam
+const BONUS_SERIE    = 100;   // por acerto seguido, acumulando
+const BONUS_SERIE_MAX = 500;  // teto do bonus de sequencia
+
+const novoPin = () => String(Math.floor(100000 + Math.random() * 900000));
 
 /* ---------- estado da partida ---------- */
 
 const jogo = {
   fase: 'menu',         // menu | lobby | pergunta | revelacao | placar | fim
   idioma: 'pt',
+  pin: '',              // PIN de 6 digitos que a galera digita pra entrar
   baralho: [],          // cartas do quiz escolhido
   quizId: null,
   quizTitulo: '',
@@ -40,7 +45,7 @@ const jogo = {
   q: -1,
   abertaEm: 0,
   relogio: null,
-  jogadores: new Map(), // token -> { token, nome, pontos, ganho, conectado }
+  jogadores: new Map(), // token -> { token, nome, pontos, ganho, serie, conectado }
   respostas: new Map(), // indice da pergunta -> Map(token -> { opcao, ms })
 };
 
@@ -89,6 +94,7 @@ function estadoApresentador() {
 
   return {
     ...base(),
+    pin: jogo.pin,
     quizzes: armazem.listar(),
     jogadores: [...jogo.jogadores.values()].map((j) => ({ nome: j.nome, conectado: j.conectado })),
     responderam: dadas.size,
@@ -111,6 +117,7 @@ function estadoJogador(token) {
     pontos: eu ? eu.pontos : 0,
     ganho: eu ? eu.ganho : 0,
     escolha: minha ? minha.opcao : null,
+    serie: eu ? eu.serie : 0,
     posicao,
     jogadores: jogo.jogadores.size,
     podio: jogo.fase === 'fim' ? lista.slice(0, 3).map((r) => ({ nome: r.nome, pontos: r.pontos })) : null,
@@ -188,12 +195,14 @@ function abrirQuiz(id) {
   jogo.quizTitulo = quiz.titulo;
   jogo.quizEmoji = quiz.emoji || '🎯';
   jogo.fase = 'lobby';
+  jogo.pin = novoPin();
   jogo.q = -1;
   jogo.abertaEm = 0;
   jogo.respostas.clear();
   for (const j of jogo.jogadores.values()) {
     j.pontos = 0;
     j.ganho = 0;
+    j.serie = 0;
   }
   transmitir();
 }
@@ -201,6 +210,7 @@ function abrirQuiz(id) {
 function irMenu() {
   clearTimeout(jogo.relogio);
   jogo.fase = 'menu';
+  jogo.pin = '';
   jogo.baralho = [];
   jogo.quizId = null;
   jogo.quizTitulo = '';
@@ -210,6 +220,7 @@ function irMenu() {
   for (const j of jogo.jogadores.values()) {
     j.pontos = 0;
     j.ganho = 0;
+    j.serie = 0;
   }
   transmitir();
 }
@@ -237,9 +248,12 @@ function revelar() {
     const r = dadas.get(j.token);
     if (r && r.opcao === c.correta) {
       const sobra = Math.max(0, 1 - r.ms / (c.segundos * 1000));
-      j.ganho = PONTOS_BASE + Math.round(PONTOS_RAPIDEZ * sobra);
+      const bonus = Math.min(BONUS_SERIE_MAX, j.serie * BONUS_SERIE);   // serie anterior
+      j.serie += 1;
+      j.ganho = PONTOS_BASE + Math.round(PONTOS_RAPIDEZ * sobra) + bonus;
       j.pontos += j.ganho;
     } else {
+      j.serie = 0;
       j.ganho = 0;
     }
   }
@@ -302,7 +316,10 @@ function responder(token, q, opcao) {
   transmitir();
 }
 
-function entrar(nomeBruto) {
+function entrar(nomeBruto, pinBruto) {
+  if (!jogo.pin) return { erro: 'sem-sala' };
+  if (String(pinBruto || '').trim() !== jogo.pin) return { erro: 'pin' };
+
   const nome = String(nomeBruto || '').trim().replace(/\s+/g, ' ').slice(0, 18);
   if (!nome) return { erro: 'nome' };
 
@@ -312,7 +329,7 @@ function entrar(nomeBruto) {
   if (repetido) return { erro: 'repetido' };
 
   const token = randomUUID();
-  jogo.jogadores.set(token, { token, nome, pontos: 0, ganho: 0, conectado: true });
+  jogo.jogadores.set(token, { token, nome, pontos: 0, ganho: 0, serie: 0, conectado: true });
   return { token, nome };
 }
 
@@ -336,7 +353,9 @@ app.get('/host', (req, res) => {
 
 app.get('/api/entrada', async (req, res) => {
   const proto = req.headers['x-forwarded-proto'] || req.protocol;
-  const url = URL_PUBLICA || `${proto}://${req.get('host')}/`;
+  const raiz = URL_PUBLICA || `${proto}://${req.get('host')}/`;
+  const pin = String(req.query.pin || '').replace(/\D/g, '').slice(0, 6);
+  const url = pin ? `${raiz}?pin=${pin}` : raiz;      // QR já entra com o PIN preenchido
   res.json({ url, qr: await QRCode.toDataURL(url, { margin: 1, width: 512 }) });
 });
 
@@ -345,6 +364,7 @@ app.get('/api/saude', (req, res) => {
     ok: true,
     fase: jogo.fase,
     quiz: jogo.quizTitulo,
+    pin: jogo.pin,
     jogadores: jogo.jogadores.size,
     quizzes: armazem.listar().length,
   });
@@ -397,6 +417,16 @@ wss.on('connection', (ws) => {
         const salvo = await armazem.salvar(v.quiz);
         ws.send(JSON.stringify({ t: 'salvo', id: salvo.id }));
         transmitir();
+      } else if (m.t === 'duplicarQuiz') {
+        const orig = armazem.pegar(m.id);
+        if (orig) {
+          await armazem.salvar({
+            titulo: (orig.titulo + ' (cópia)').slice(0, 60),
+            emoji: orig.emoji,
+            cartas: orig.cartas,
+          });
+          transmitir();
+        }
       } else if (m.t === 'excluirQuiz') {
         if (m.id === jogo.quizId && jogo.fase !== 'menu') {
           return ws.send(JSON.stringify({ t: 'erro', erro: 'em-uso' }));
@@ -409,7 +439,7 @@ wss.on('connection', (ws) => {
 
     /* jogador */
     if (m.t === 'entrar') {
-      const r = entrar(m.nome);
+      const r = entrar(m.nome, m.pin);
       if (r.erro) return ws.send(JSON.stringify({ t: 'erro', erro: r.erro }));
       ws.papel = 'jogador';
       ws.token = r.token;

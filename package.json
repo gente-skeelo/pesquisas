@@ -1,8 +1,8 @@
 {
-  "name": "quiz-festas-juninas",
+  "name": "quiz-do-skee",
   "version": "1.0.0",
   "private": true,
-  "description": "Quiz ao vivo sobre festas juninas pelo mundo — apresentador na tela grande, jogadores no celular",
+  "description": "Central de quizzes ao vivo da Skeelo — apresentador na tela grande, jogadores no celular",
   "type": "module",
   "engines": {
     "node": ">=20"

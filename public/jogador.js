@@ -4,31 +4,36 @@ const FORMAS = ['▲', '◆', '●', '■'];
 
 const T = {
   pt: {
-    titulo: 'Festas Juninas pelo mundo',
-    sub: 'Digite seu nome pra entrar no arraiá.',
+    titulo: 'Quiz do Skee',
+    sub: 'Digite o PIN da sala e seu nome.',
+    rotPin: 'PIN da sala',
     rotNome: 'Seu nome',
     entrar: 'Entrar',
-    ola: (n) => `Beleza, ${n}!`,
+    ola: (n) => `Tudo certo, ${n}!`,
     escolhendo: 'O apresentador está escolhendo o quiz…',
     espera: 'Aguarde o apresentador começar.',
-    naSala: (n) => `${n} ${n === 1 ? 'pessoa' : 'pessoas'} no arraiá`,
+    naSala: (n) => `${n} ${n === 1 ? 'pessoa' : 'pessoas'} na sala`,
     pergunta: (i, t) => `Pergunta ${i} de ${t}`,
-    respondeu: 'Resposta enviada. Segura a ansiedade.',
+    respondeu: 'Resposta enviada. Aguarde.',
     acertou: 'Acertou!',
     errou: 'Dessa vez não.',
     passou: 'Você não respondeu.',
+    serie: (n) => `🔥 ${n} acertos seguidos`,
     posicao: (p, n) => `${p}º lugar de ${n}`,
     total: (p) => `${p} pontos no total`,
-    fim: 'Fim de festa!',
+    fim: 'Fim de jogo!',
     resumo: (p, pos) => `Você fez ${p} pontos e ficou em ${pos}º.`,
     erroNome: 'Escreva um nome.',
+    erroPin: 'PIN incorreto. Confira na tela do apresentador.',
+    erroSemSala: 'Nenhuma sala aberta no momento.',
     erroRepetido: 'Esse nome já está na sala. Escolha outro.',
     caiu: 'Conexão caiu. Reconectando…',
     rodape: 'Quiz do Skee · skeelo',
   },
   en: {
-    titulo: 'June festivals around the world',
-    sub: 'Type your name to join the party.',
+    titulo: 'Quiz do Skee',
+    sub: 'Enter the room PIN and your name.',
+    rotPin: 'Room PIN',
     rotNome: 'Your name',
     entrar: 'Join',
     ola: (n) => `You're in, ${n}!`,
@@ -40,11 +45,14 @@ const T = {
     acertou: 'Correct!',
     errou: 'Not this time.',
     passou: "You didn't answer.",
+    serie: (n) => `🔥 ${n} in a row`,
     posicao: (p, n) => `${p} of ${n}`,
     total: (p) => `${p} points in total`,
     fim: "That's a wrap!",
     resumo: (p, pos) => `You scored ${p} points and finished ${pos}.`,
     erroNome: 'Type a name.',
+    erroPin: "Wrong PIN. Check the host's screen.",
+    erroSemSala: 'No room open right now.',
     erroRepetido: 'That name is taken. Pick another.',
     caiu: 'Connection dropped. Reconnecting…',
     rodape: 'Quiz do Skee · skeelo',
@@ -98,6 +106,12 @@ function conectar() {
       } else if (m.erro === 'nome') {
         $('erro-entrar').textContent = T[idioma].erroNome;
         $('bt-entrar').disabled = false;
+      } else if (m.erro === 'pin') {
+        $('erro-entrar').textContent = T[idioma].erroPin;
+        $('bt-entrar').disabled = false;
+      } else if (m.erro === 'sem-sala') {
+        $('erro-entrar').textContent = T[idioma].erroSemSala;
+        $('bt-entrar').disabled = false;
       }
       return;
     }
@@ -119,6 +133,7 @@ function pintar(e) {
   document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'en';
   $('tit-entrar').textContent = e.quiz ? `${e.emoji || ''} ${e.quiz}`.trim() : 'Quiz do Skee';
   $('sub-entrar').textContent = t.sub;
+  $('rot-pin').textContent = t.rotPin;
   $('rot-nome').textContent = t.rotNome;
   $('bt-entrar').textContent = t.entrar;
   $('rodape').textContent = t.rodape;
@@ -136,7 +151,7 @@ function pintar(e) {
   }
 
   if (e.fase === 'lobby') {
-    $('emoji-espera').textContent = e.emoji || '🌽';
+    $('emoji-espera').textContent = e.emoji || '🎯';
     $('ola').textContent = t.ola(e.nome || meuNome);
     $('txt-espera').textContent = e.quiz ? `${e.quiz} — ${t.espera}` : t.espera;
     $('contagem-jogadores').textContent = t.naSala(e.jogadores);
@@ -166,12 +181,13 @@ function pintar(e) {
     $('emoji-feedback').textContent = acertou ? '🎉' : respondeu ? '😅' : '⏰';
     $('veredito').textContent = acertou ? t.acertou : respondeu ? t.errou : t.passou;
     $('ganho').textContent = acertou ? `+${e.ganho}` : '';
+    $('sequencia').textContent = acertou && e.serie >= 2 ? t.serie(e.serie) : '';
     $('situacao').textContent = `${t.total(e.pontos)} · ${t.posicao(e.posicao, e.jogadores)}`;
     return mostrar('feedback');
   }
 
   if (e.fase === 'fim') {
-    $('emoji-fim').textContent = ['🏆', '🥈', '🥉'][e.posicao - 1] || '🌽';
+    $('emoji-fim').textContent = ['🏆', '🥈', '🥉'][e.posicao - 1] || '🎯';
     $('tit-fim').textContent = t.fim;
     $('resumo-fim').textContent = t.resumo(e.pontos, e.posicao);
     if (!festejei) {
@@ -221,11 +237,19 @@ function montarOpcoes(e) {
 $('form-entrar').addEventListener('submit', (ev) => {
   ev.preventDefault();
   const nome = $('nome').value.trim();
-  if (!nome) return;
+  const pin = $('pin').value.trim();
+  if (!nome || !pin) return;
   $('bt-entrar').disabled = true;
   $('erro-entrar').textContent = '';
-  ws.send(JSON.stringify({ t: 'entrar', nome }));
+  ws.send(JSON.stringify({ t: 'entrar', nome, pin }));
 });
 
+/* PIN na URL (?pin=123456 ou o QR do apresentador) já vem preenchido */
+const pinDaUrl = new URLSearchParams(location.search).get('pin');
+if (pinDaUrl) $('pin').value = pinDaUrl.replace(/\D/g, '').slice(0, 6);
+$('pin').addEventListener('input', (ev) => {
+  ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 6);
+});
 if (meuNome) $('nome').value = meuNome;
+if (pinDaUrl && meuNome) $('nome').focus();
 conectar();

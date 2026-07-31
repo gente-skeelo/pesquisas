@@ -13,10 +13,15 @@
   <link rel="stylesheet" href="/estilo.css">
   <style>
     .envelope { max-width: 1240px; padding-bottom: 108px; }
+    .duas > * { height: 100%; }
     .duas { display: grid; gap: 28px; grid-template-columns: 360px 1fr; align-items: start; }
     @media (max-width: 900px) { .duas { grid-template-columns: 1fr; } }
 
     #qr { width: 100%; border-radius: 18px; display: block; background: #fff; padding: 8px; }
+    #pin-grande {
+      font-size: clamp(2.4rem, 5vw, 3.4rem); font-weight: 800; letter-spacing: .12em;
+      color: var(--tinta); margin: 0 0 .8rem; font-variant-numeric: tabular-nums;
+    }
     .url {
       font: 600 1rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
       word-break: break-all;
@@ -27,7 +32,7 @@
       position: fixed; left: 0; right: 0; bottom: 0;
       display: flex; gap: 12px; align-items: center; justify-content: center;
       padding: 14px clamp(12px, 3vw, 28px);
-      background: rgba(255, 255, 255, .9);
+      background: rgba(255, 255, 255, .94);
       border-top: 1px solid var(--borda);
       box-shadow: 0 -8px 24px rgba(23, 58, 41, .07);
       backdrop-filter: blur(10px);
@@ -36,12 +41,12 @@
     .barra-controle .esquerda { margin-right: auto; display: flex; gap: 10px; align-items: center; }
     .barra-controle.escondida { display: none; }
 
-    .seletor { display: inline-flex; border: 1px solid var(--borda); border-radius: 999px; overflow: hidden; background: #fff; }
+    .seletor { display: inline-flex; border: 1px solid var(--borda); border-radius: 12px; overflow: hidden; background: #fff; }
     .seletor button {
       font: 600 .9rem var(--fonte); color: var(--tinta); background: transparent;
       border: 0; padding: .5rem .9rem; cursor: pointer;
     }
-    .seletor button.on { background: var(--skeelo); color: #fff; }
+    .seletor button.on { background: var(--menta); color: var(--skeelo-escuro); }
 
     /* ---------- menu de quizzes ---------- */
     .grade-quizzes {
@@ -50,29 +55,35 @@
       margin-top: 1.6rem;
     }
     .card-quiz {
-      display: flex; flex-direction: column; gap: .5rem;
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; gap: .45rem;
       background: var(--carta); border: 1px solid var(--borda);
-      border-radius: 24px; padding: 22px;
-      box-shadow: 0 10px 26px rgba(23, 58, 41, .08);
-      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+      border-radius: 16px; padding: 20px 20px 20px 24px;
+      box-shadow: var(--sombra);
+      transition: transform .12s ease, box-shadow .12s ease;
     }
-    .card-quiz:hover { transform: translateY(-3px); border-color: var(--skeelo-claro);
-      box-shadow: 0 16px 34px rgba(23, 58, 41, .14); }
-    .card-quiz .emoji { font-size: 2.2rem; line-height: 1; }
+    .card-quiz:hover { transform: translateY(-3px); box-shadow: var(--sombra2); }
+    .card-quiz .emoji {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; background: var(--menta); margin-bottom: .3rem;
+    }
     .card-quiz .titulo { font-weight: 800; font-size: 1.15rem; }
     .card-quiz .acoes { display: flex; gap: 8px; margin-top: auto; padding-top: .8rem; }
-    .card-quiz .acoes .botao { padding: .55rem 1rem; font-size: .92rem; }
+    .card-quiz .acoes { flex-wrap: wrap; }
+    .card-quiz .acoes .botao { padding: .5rem .9rem; font-size: .9rem; }
     .card-novo {
       align-items: center; justify-content: center; text-align: center;
-      border-style: dashed; cursor: pointer; min-height: 170px;
-      color: var(--skeelo-claro); font-weight: 700;
+      border: 1.5px dashed rgba(0, 200, 83, .45); box-shadow: none;
+      cursor: pointer; min-height: 176px; background: #fbfffc;
+      color: var(--skeelo-escuro); font-weight: 700;
     }
-    .card-novo:hover { background: #effaf3; }
+    .card-novo:hover { background: #f2fdf6; box-shadow: var(--sombra); }
     .card-novo .mais { font-size: 2.4rem; line-height: 1; }
 
     /* ---------- editor ---------- */
-    .ed-carta { background: #fff; border: 1px solid var(--borda); border-radius: 24px;
-      margin: 18px 0; padding: 22px; box-shadow: 0 10px 26px rgba(23, 58, 41, .07); }
+    .ed-carta { background: #fff; border: 1px solid var(--borda); border-radius: 16px;
+      margin: 16px 0; padding: 22px; box-shadow: var(--sombra); }
     .ed-carta legend {
       font-weight: 800; color: var(--skeelo-escuro);
       padding: 0 .6rem; letter-spacing: .04em;
@@ -99,22 +110,25 @@
     .fichas { display: flex; flex-wrap: wrap; gap: 8px; }
     .ficha {
       font: 600 .95rem var(--fonte); color: var(--tinta);
-      padding: .5rem .9rem; border-radius: 999px;
-      background: #fff; border: 1px solid var(--borda);
-      box-shadow: 0 3px 10px rgba(23, 58, 41, .07);
+      padding: .5rem .95rem; border-radius: 10px;
+      background: var(--menta); border: 1px solid transparent;
       cursor: pointer; transition: background .12s ease, border-color .12s ease;
     }
-    .ficha:hover { background: #fff0f4; border-color: var(--rosa); color: var(--rosa); }
+    .ficha:hover { background: #fdeaef; border-color: rgba(232, 93, 126, .4); color: #c2445f; }
     .ficha.fora { opacity: .4; text-decoration: line-through; }
     .relogio {
       font-size: clamp(2.4rem, 7vw, 4.4rem); font-weight: 800;
       font-variant-numeric: tabular-nums; color: var(--skeelo-escuro); line-height: 1;
     }
     .curiosidade {
-      background: #fff; border: 1px solid var(--borda);
-      border-left: 5px solid var(--milho); border-radius: 0 18px 18px 0;
-      padding: 1rem 1.2rem; box-shadow: 0 8px 22px rgba(23, 58, 41, .07);
-      font-size: clamp(1rem, 1.8vw, 1.25rem); margin-top: 1.4rem;
+      position: relative; background: #fff; border: 1px solid var(--borda);
+      border-radius: 16px; padding: 1.1rem 1.3rem 1.1rem 1.6rem;
+      box-shadow: var(--sombra);
+      font-size: clamp(1rem, 1.8vw, 1.2rem); margin-top: 1.4rem;
+    }
+    .curiosidade::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+      background: var(--milho); border-radius: 16px 0 0 16px;
     }
 
     /* ---------- pódio ---------- */
@@ -123,7 +137,7 @@
       display: flex; align-items: flex-end; justify-content: center;
       gap: clamp(10px, 2vw, 26px); max-width: 820px;
       margin: 1.6rem auto 0; min-height: 400px;
-      background: radial-gradient(440px 210px at 50% 100%, rgba(0, 184, 113, .16), transparent 70%);
+      background: radial-gradient(440px 210px at 50% 100%, rgba(0, 200, 83, .14), transparent 70%);
     }
     .coluna { flex: 1; max-width: 240px; opacity: 0; transform: translateY(40px); transition: opacity .5s ease, transform .5s ease; }
     .coluna.sobe { opacity: 1; transform: none; }
@@ -165,7 +179,7 @@
     .palco-chao {
       max-width: 860px; height: 12px; margin: 0 auto 1.6rem;
       border-radius: 999px;
-      background: linear-gradient(90deg, transparent, rgba(0, 184, 113, .45), transparent);
+      background: linear-gradient(90deg, transparent, rgba(0, 200, 83, .4), transparent);
     }
     @keyframes cai {
       from { opacity: 0; transform: translateY(-30px) rotate(-14deg); }
@@ -176,13 +190,23 @@
   </style>
 </head>
 <body>
+  <header class="topo">
+    <div class="topo-in">
+      <span class="logo-skeelo">s<b>k</b>eelo</span>
+      <div class="topo-centro"><span class="pill on">◎ Quiz do Skee</span></div>
+      <span class="topo-dir" id="topo-dir"></span>
+    </div>
+  </header>
+
   <main class="envelope">
 
     <!-- menu / central -->
     <section id="tela-menu" class="tela">
-      <p class="marca">Quiz do Skee</p>
-      <h1 style="font-size:clamp(1.8rem,5vw,3rem)">Central de quizzes <span class="logo-skeelo">s<b>k</b>eelo</span></h1>
-      <p class="discreto">Escolha um quiz pra apresentar, edite um existente ou crie um novo.</p>
+      <div class="hero">
+        <p class="marca" style="color:var(--skeelo-claro)">Quiz do Skee</p>
+        <h1 style="font-size:clamp(1.7rem,4.4vw,2.6rem);margin:0 0 .35rem">Central de quizzes</h1>
+        <p class="discreto" style="margin:0">Escolha um quiz pra apresentar, edite um existente ou crie um novo.</p>
+      </div>
       <div class="grade-quizzes" id="grade-quizzes"></div>
     </section>
 
@@ -212,15 +236,19 @@
 
     <!-- lobby -->
     <section id="tela-lobby" class="tela">
-      <p class="marca">Quiz do Skee</p>
-      <h1 id="h-titulo" style="font-size:clamp(1.8rem,5vw,3.2rem)"></h1>
+      <div class="hero">
+        <p class="marca" style="color:var(--skeelo-claro)">Sala aberta</p>
+        <h1 id="h-titulo" style="font-size:clamp(1.6rem,4.4vw,2.8rem);margin:0"></h1>
+      </div>
       <div class="duas" style="margin-top:1.4rem">
-        <div class="cartao centro">
+        <div class="cartao faixa centro" style="--acento:var(--op1)">
+          <p class="discreto" id="h-rotpin" style="margin:0 0 .2rem">PIN da sala</p>
+          <p id="pin-grande">000000</p>
           <img id="qr" alt="QR code de entrada">
           <p class="discreto" id="h-aponte" style="margin:.9rem 0 .3rem">Aponte a câmera</p>
           <p class="url" id="url"></p>
         </div>
-        <div class="cartao">
+        <div class="cartao faixa" style="--acento:var(--skeelo)">
           <h2 id="h-quem">Quem já chegou <span id="n-jogadores" style="color:var(--milho)"></span></h2>
           <div class="fichas" id="fichas"></div>
           <p class="discreto" id="h-vazio" style="margin-top:1rem"></p>
@@ -250,7 +278,7 @@
 
     <!-- fim -->
     <section id="tela-fim" class="tela centro">
-      <h1 id="h-fim" style="font-size:clamp(1.8rem,5vw,3rem)">Fim de festa!</h1>
+      <h1 id="h-fim" style="font-size:clamp(1.8rem,5vw,3rem)">Fim de jogo!</h1>
       <div class="podio-palco" id="podio-palco"></div>
       <div class="palco-chao"></div>
       <ol class="lista" id="podio" style="max-width:640px;margin:0 auto;text-align:left"></ol>

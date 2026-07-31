@@ -4,16 +4,19 @@ const FORMAS = ['▲', '◆', '●', '■'];
 
 const T = {
   pt: {
-    aponte: 'Aponte a câmera do celular',
+    aponte: 'Ou aponte a câmera do celular',
+    rotPin: 'PIN da sala',
+    duplicar: 'Duplicar',
+    copiaDe: (t) => `Duplicar "${t}"?`,
     quem: 'Quem já chegou',
-    vazio: 'Ninguém ainda. Mostre o QR na tela grande.',
+    vazio: 'Ninguém ainda. Mostre o PIN e o QR na tela grande.',
     dicaRemover: 'Clique num nome pra tirar a pessoa da sala.',
     confirmaRemover: (n) => `Tirar ${n} da sala?`,
     pergunta: (i, t) => `Pergunta ${i} de ${t}`,
     responderam: (n, tot) => `${n} de ${tot} já responderam`,
     parcial: 'Placar parcial',
     lideres: 'Quem está na frente',
-    fim: 'Fim de festa!',
+    fim: 'Fim de jogo!',
     comecar: 'Começar',
     revelar: 'Revelar resposta',
     placar: 'Ver placar',
@@ -26,9 +29,12 @@ const T = {
     caiu: 'Conexão caiu. Reconectando…',
   },
   en: {
-    aponte: 'Point your phone camera',
+    aponte: 'Or point your phone camera',
+    rotPin: 'Room PIN',
+    duplicar: 'Duplicate',
+    copiaDe: (t) => `Duplicate "${t}"?`,
     quem: 'Already here',
-    vazio: 'Nobody yet. Put the QR on the big screen.',
+    vazio: 'Nobody yet. Show the PIN and QR on the big screen.',
     dicaRemover: 'Click a name to remove that person.',
     confirmaRemover: (n) => `Remove ${n} from the room?`,
     pergunta: (i, t) => `Question ${i} of ${t}`,
@@ -70,13 +76,22 @@ function mostrar(qual) {
 const enviar = (m) => ws && ws.readyState === WebSocket.OPEN && ws.send(JSON.stringify(m));
 
 /* QR e URL de entrada */
-fetch('/api/entrada')
-  .then((r) => r.json())
-  .then(({ url, qr }) => {
-    $('qr').src = qr;
-    $('url').textContent = url.replace(/^https?:\/\//, '');
-  })
-  .catch(() => { $('url').textContent = location.origin; });
+let urlBase = '';
+let qrDoPin = '';
+
+function carregarEntrada(pin) {
+  const alvo = '/api/entrada' + (pin ? '?pin=' + encodeURIComponent(pin) : '');
+  fetch(alvo)
+    .then((r) => r.json())
+    .then(({ url, qr }) => {
+      urlBase = url;
+      qrDoPin = pin || '';
+      $('qr').src = qr;
+      $('url').textContent = url.replace(/^https?:\/\//, '');
+    })
+    .catch(() => { $('url').textContent = location.origin; });
+}
+carregarEntrada('');
 
 function conectar() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -126,6 +141,8 @@ function pintar(e) {
   const principal = $('bt-principal');
   principal.disabled = false;
 
+  if (e.pin !== qrDoPin) carregarEntrada(e.pin);
+
   if (e.fase === 'menu') {
     pintarMenu(e);
     return mostrar('menu');
@@ -133,6 +150,8 @@ function pintar(e) {
 
   if (e.fase === 'lobby') {
     $('h-titulo').textContent = `${e.emoji || ''} ${e.quiz}`.trim();
+    $('h-rotpin').textContent = t.rotPin;
+    $('pin-grande').textContent = e.pin || '——————';
     $('h-quem').firstChild.textContent = t.quem + ' ';
     $('n-jogadores').textContent = e.jogadores.length ? `(${e.jogadores.length})` : '';
     $('h-vazio').textContent = e.jogadores.length ? t.dicaRemover : t.vazio;
@@ -211,6 +230,7 @@ function pintarMenu(e) {
       '<div class="emoji"></div><div class="titulo"></div><div class="discreto"></div>' +
       '<div class="acoes"><button class="botao ac-jogar">▶ Apresentar</button>' +
       '<button class="botao fantasma ac-editar">Editar</button>' +
+      '<button class="botao fantasma ac-duplicar"></button>' +
       '<button class="botao perigo ac-excluir">✕</button></div>';
     card.querySelector('.emoji').textContent = q.emoji;
     card.querySelector('.titulo').textContent = q.titulo;
@@ -218,6 +238,11 @@ function pintarMenu(e) {
       q.n + (q.n === 1 ? ' pergunta' : ' perguntas');
     card.querySelector('.ac-jogar').onclick = () => enviar({ t: 'abrirQuiz', id: q.id });
     card.querySelector('.ac-editar').onclick = () => enviar({ t: 'pegarQuiz', id: q.id });
+    const btDup = card.querySelector('.ac-duplicar');
+    btDup.textContent = T[idioma].duplicar;
+    btDup.onclick = () => {
+      if (confirm(T[idioma].copiaDe(q.titulo))) enviar({ t: 'duplicarQuiz', id: q.id });
+    };
     card.querySelector('.ac-excluir').onclick = () => {
       if (confirm(`Excluir "${q.titulo}"? Não dá pra desfazer.`)) enviar({ t: 'excluirQuiz', id: q.id });
     };

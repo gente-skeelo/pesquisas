@@ -1,76 +1,109 @@
 /* Quiz do Skee — estilo compartilhado entre a tela grande e o celular.
-   PALETA SKEELO (tema claro): ajuste os tons oficiais aqui, o resto acompanha. */
+   Linguagem visual alinhada ao Skeelo Career Hub. */
 
 :root {
-  --skeelo:        #00b871;   /* verde da marca */
-  --skeelo-claro:  #3ddc97;
-  --skeelo-escuro: #008f57;   /* verde pra texto sobre fundo claro */
-  --skeelo-fundo:  #f5faf6;   /* off-white esverdeado */
+  --skeelo:        #00c853;   /* verde vivo da marca */
+  --skeelo-claro:  #34e07a;
+  --skeelo-escuro: #0b6b39;   /* verde pra texto sobre claro */
+  --floresta:      #0c3221;   /* verde-escuro da barra e do hero */
+  --floresta2:     #124a2e;
+  --menta:         #d9f5e4;   /* pastel de apoio (chips, botões suaves) */
+  --fundo:         #f2faf1;   /* off-white esverdeado da página */
 
-  --tinta:  #14271d;          /* texto principal */
-  --carta:  #ffffff;
-  --borda:  rgba(16, 64, 43, .12);
-  --creme:  #14271d;          /* legado: usado como cor de texto */
-  --milho:  #eda60a;          /* âmbar (pontos, relógio) */
-  --fogo:   #ff9f6e;
-  --verde:  #2fbf8f;
-  --azul:   #59c3ea;
-  --rosa:   #e85d7e;
+  --tinta:   #0d2818;         /* texto principal */
+  --tinta2:  #5c7568;         /* texto secundário */
+  --carta:   #ffffff;
+  --borda:   rgba(12, 50, 33, .09);
+  --creme:   #0d2818;         /* legado */
+  --milho:   #e8a712;
+  --fogo:    #ff9f6e;
+  --verde:   #2fbf8f;
+  --azul:    #59c3ea;
+  --rosa:    #e85d7e;
 
-  /* alternativas em tons pastel */
-  --op0: #ffb3c1;
-  --op1: #a5dcf5;
-  --op2: #ffe08a;
-  --op3: #a8ecc9;
+  /* alternativas em pastel, no tom dos chips do Career Hub */
+  --op0: #fbcfdd;
+  --op1: #c7e2fb;
+  --op2: #fde6a8;
+  --op3: #bdf0d4;
+
+  --sombra:  0 4px 16px rgba(12, 50, 33, .07);
+  --sombra2: 0 14px 34px rgba(12, 50, 33, .13);
 
   --fonte: 'Poppins', ui-rounded, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
-html, body {
-  margin: 0;
-  min-height: 100%;
-}
+html, body { margin: 0; min-height: 100%; }
 
 body {
   font-family: var(--fonte);
   color: var(--tinta);
-  background:
-    radial-gradient(900px 520px at 12% -8%, #d9f4e6 0%, transparent 60%),
-    radial-gradient(820px 520px at 100% 0%, #e3f2ff 0%, transparent 55%),
-    var(--skeelo-fundo);
-  background-attachment: fixed;
+  background: var(--fundo);
   -webkit-text-size-adjust: 100%;
 }
+
+/* ---------- barra do topo, igual à do Career Hub ---------- */
+.topo {
+  background: var(--floresta);
+  color: #fff;
+  padding: 14px clamp(14px, 3vw, 28px);
+}
+.topo-in {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.topo .logo-skeelo {
+  color: #fff;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+.topo .logo-skeelo b { color: var(--skeelo-claro); }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  font-weight: 600;
+  font-size: .95rem;
+  padding: .5rem 1rem;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, .82);
+}
+.pill.on { background: rgba(52, 224, 122, .16); color: var(--skeelo-claro); }
+.topo-centro { margin: 0 auto; display: flex; gap: .4rem; }
+.topo-dir { margin-left: auto; font-size: .92rem; color: rgba(255, 255, 255, .72); }
 
 .envelope {
   max-width: 1120px;
   margin: 0 auto;
-  padding: clamp(16px, 3vw, 32px);
+  padding: clamp(18px, 3vw, 34px);
 }
 
 .tela { display: none; }
 .tela.ativa { display: block; animation: entra .25s ease-out; }
-
 @keyframes entra {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
 
-h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; font-weight: 700; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; font-weight: 700; letter-spacing: -.01em; }
 p { line-height: 1.55; }
 
 .marca {
   font-size: .78rem;
-  letter-spacing: .16em;
+  letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--skeelo-escuro);
   font-weight: 700;
   margin-bottom: .4rem;
 }
 
-/* wordmark tipográfico da skeelo */
 .logo-skeelo {
   font-weight: 800;
   letter-spacing: -.02em;
@@ -79,73 +112,95 @@ p { line-height: 1.55; }
 }
 .logo-skeelo b { color: var(--skeelo-escuro); }
 
+/* ---------- cards ---------- */
 .cartao {
-  background: var(--carta);
-  border: 1px solid var(--borda);
-  border-radius: 24px;
-  padding: clamp(16px, 2.5vw, 28px);
-  box-shadow: 0 10px 30px rgba(23, 58, 41, .08);
-}
-
-.botao {
   position: relative;
   overflow: hidden;
-  font: inherit;
-  font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, var(--skeelo), var(--skeelo-claro));
-  border: 0;
-  border-radius: 999px;
-  padding: .85rem 1.6rem;
-  cursor: pointer;
-  box-shadow:
-    0 8px 20px rgba(0, 184, 113, .28),
-    inset 0 1px 0 rgba(255, 255, 255, .45),
-    inset 0 -2px 0 rgba(0, 0, 0, .12);
-  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+  background: var(--carta);
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  padding: clamp(18px, 2.5vw, 26px);
+  box-shadow: var(--sombra);
 }
-.botao::after {                          /* brilho que varre o botão */
+/* barra colorida na lateral esquerda, marca registrada do Career Hub */
+.cartao.faixa::before,
+.card-quiz.faixa::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, .55) 50%, transparent 68%);
-  transform: translateX(-140%) skewX(-12deg);
-  animation: varre 4.2s ease-in-out infinite;
-  pointer-events: none;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: var(--acento, var(--skeelo));
+  border-radius: 16px 0 0 16px;
 }
-.botao.fantasma::after, .botao.perigo::after, .botao:disabled::after { animation: none; }
+.cartao.faixa { padding-left: calc(clamp(18px, 2.5vw, 26px) + 6px); }
+
+/* chip de ícone pastel */
+.chip {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+  background: var(--chip, var(--menta));
+  flex: none;
+}
+
+/* hero verde-escuro */
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, var(--floresta), var(--floresta2));
+  color: #fff;
+  border-radius: 20px;
+  padding: clamp(22px, 3vw, 34px);
+  box-shadow: var(--sombra2);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -60px; top: -70px;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: rgba(52, 224, 122, .1);
+}
+.hero h1, .hero h2 { color: #fff; }
+.hero .discreto { color: rgba(255, 255, 255, .72); opacity: 1; }
+
+/* ---------- botões ---------- */
+.botao {
+  position: relative;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--skeelo);
+  border: 0;
+  border-radius: 12px;
+  padding: .7rem 1.3rem;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 200, 83, .26);
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease, background .12s ease;
+}
 .botao:hover:not(:disabled) {
   transform: translateY(-1px);
   filter: brightness(1.04);
-  box-shadow:
-    0 12px 28px rgba(0, 184, 113, .38),
-    inset 0 1px 0 rgba(255, 255, 255, .45),
-    inset 0 -2px 0 rgba(0, 0, 0, .12);
+  box-shadow: 0 10px 24px rgba(0, 200, 83, .34);
 }
-.botao:active:not(:disabled) { transform: translateY(1px) scale(.98); }
-.botao:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.botao:active:not(:disabled) { transform: translateY(1px) scale(.99); }
+.botao:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+/* secundário: pastel verde com texto escuro, como "Editar" / "Criar PDI" */
 .botao.fantasma {
-  background: #fff;
-  color: var(--tinta);
-  border: 1px solid var(--borda);
-  box-shadow: 0 4px 12px rgba(23, 58, 41, .06);
-}
-.botao.fantasma:hover:not(:disabled) {
-  border-color: var(--skeelo-claro);
-  background: #f0fbf5;
-  box-shadow: 0 8px 20px rgba(0, 184, 113, .16);
-}
-.botao.perigo {
-  background: #fff;
-  color: var(--rosa);
-  border: 1px solid rgba(232, 93, 126, .5);
+  background: var(--menta);
+  color: var(--skeelo-escuro);
   box-shadow: none;
 }
-.botao.perigo:hover:not(:disabled) { background: #fff0f4; border-color: var(--rosa); }
-@keyframes varre {
-  0%, 55% { transform: translateX(-140%) skewX(-12deg); }
-  75%, 100% { transform: translateX(140%) skewX(-12deg); }
+.botao.fantasma:hover:not(:disabled) { background: #c6efd6; box-shadow: none; }
+
+.botao.perigo {
+  background: #fdeaef;
+  color: #c2445f;
+  box-shadow: none;
 }
+.botao.perigo:hover:not(:disabled) { background: #fbd9e2; box-shadow: none; }
 
 .campo {
   font: inherit;
@@ -153,13 +208,13 @@ p { line-height: 1.55; }
   color: var(--tinta);
   background: #fff;
   border: 1.5px solid var(--borda);
-  border-radius: 14px;
-  padding: .9rem 1rem;
+  border-radius: 12px;
+  padding: .85rem 1rem;
 }
-.campo::placeholder { color: rgba(20, 39, 29, .4); }
-.campo:focus { outline: 2px solid var(--skeelo); outline-offset: 1px; }
+.campo::placeholder { color: #9db3a6; }
+.campo:focus { outline: 2px solid var(--skeelo); outline-offset: 1px; border-color: transparent; }
 
-/* alternativas */
+/* ---------- alternativas ---------- */
 .opcoes {
   display: grid;
   gap: 14px;
@@ -169,84 +224,98 @@ p { line-height: 1.55; }
 
 .opcao {
   position: relative;
-  overflow: hidden;
   font: inherit;
   font-weight: 600;
   text-align: left;
   display: flex;
   align-items: center;
-  gap: .8rem;
-  min-height: 76px;
+  gap: .9rem;
+  min-height: 78px;
   padding: 1rem 1.2rem;
-  border: 1.5px solid rgba(16, 64, 43, .08);
-  border-radius: 20px;
+  background: #fff;
+  border: 1.5px solid var(--borda);
+  border-radius: 16px;
   color: var(--tinta);
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(23, 58, 41, .1), inset 0 1px 0 rgba(255, 255, 255, .6);
-  transition: transform .12s ease, opacity .2s ease, box-shadow .2s ease, filter .12s ease;
+  box-shadow: var(--sombra);
+  transition: transform .12s ease, opacity .2s ease, box-shadow .2s ease, border-color .12s ease;
 }
-.opcao::before {                         /* verniz na metade de cima */
+.opcao::before {                      /* barra colorida à esquerda */
   content: '';
   position: absolute;
-  inset: 0 0 55%;
-  background: linear-gradient(rgba(255, 255, 255, .45), rgba(255, 255, 255, .05));
-  pointer-events: none;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  border-radius: 16px 0 0 16px;
+  background: var(--cor);
 }
+.opcao .forma {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--cor);
+  font-size: 1.05rem;
+  color: rgba(13, 40, 24, .55);
+  flex: none;
+}
+.opcao[data-i="0"] { --cor: var(--op0); }
+.opcao[data-i="1"] { --cor: var(--op1); }
+.opcao[data-i="2"] { --cor: var(--op2); }
+.opcao[data-i="3"] { --cor: var(--op3); }
 .opcao:hover:not(:disabled) {
   transform: translateY(-2px);
-  filter: saturate(1.1);
-  box-shadow: 0 12px 26px rgba(23, 58, 41, .18), inset 0 1px 0 rgba(255, 255, 255, .6);
+  box-shadow: var(--sombra2);
 }
-.opcao:active:not(:disabled) { transform: scale(.97); }
+.opcao:active:not(:disabled) { transform: scale(.98); }
 .opcao:disabled { cursor: default; }
-.opcao .forma { font-size: 1.3rem; line-height: 1; opacity: .55; }
-.opcao[data-i="0"] { background: var(--op0); }
-.opcao[data-i="1"] { background: var(--op1); }
-.opcao[data-i="2"] { background: var(--op2); }
-.opcao[data-i="3"] { background: var(--op3); }
-.opcao.apagada { opacity: .3; }
+.opcao.apagada { opacity: .38; }
 .opcao.certa {
-  box-shadow: 0 0 0 4px var(--skeelo), 0 12px 30px rgba(0, 184, 113, .35);
-  border-color: transparent;
+  border-color: var(--skeelo);
+  box-shadow: 0 0 0 3px rgba(0, 200, 83, .28), var(--sombra2);
 }
 
 .barra-tempo {
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
-  background: rgba(16, 64, 43, .1);
+  background: rgba(12, 50, 33, .08);
   overflow: hidden;
   margin: 1rem 0 1.4rem;
 }
 .barra-tempo span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--skeelo-claro), var(--op2), var(--fogo));
+  background: linear-gradient(90deg, var(--skeelo), var(--op2), var(--fogo));
   transition: width .95s linear;
 }
 
+/* ---------- listas ---------- */
 .lista { list-style: none; margin: 0; padding: 0; }
 .lista li {
   display: flex;
   align-items: center;
-  gap: .8rem;
-  padding: .7rem .9rem;
+  gap: .9rem;
+  padding: .8rem 1rem;
   border-radius: 14px;
   background: #fff;
   border: 1px solid var(--borda);
-  margin-bottom: 8px;
+  box-shadow: var(--sombra);
+  margin-bottom: 10px;
 }
 .lista .pos {
-  min-width: 2ch;
-  font-weight: 800;
+  min-width: 2.2rem; height: 2.2rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: var(--menta);
+  font-weight: 700;
   color: var(--skeelo-escuro);
   font-variant-numeric: tabular-nums;
+  flex: none;
 }
-.lista .pontos { margin-left: auto; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lista .pontos { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-.discreto { opacity: .65; font-size: .92rem; }
+.discreto { color: var(--tinta2); font-size: .92rem; }
 .centro { text-align: center; }
 
-/* glitter de fundo — estrelinhas geradas pelo confete.js */
+/* ---------- glitter ---------- */
 .glitter {
   position: fixed;
   inset: 0;
@@ -259,13 +328,12 @@ p { line-height: 1.55; }
   font-style: normal;
   opacity: 0;
   animation: cintila var(--d, 3s) ease-in-out var(--a, 0s) infinite;
-  text-shadow: 0 0 6px currentColor;
   will-change: opacity, transform;
 }
 @keyframes cintila {
   0%, 100% { opacity: 0; transform: scale(.35) rotate(0deg); }
-  50%      { opacity: var(--o, .6); transform: scale(1) rotate(25deg); }
+  50%      { opacity: var(--o, .5); transform: scale(1) rotate(25deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .glitter i, .botao::after { animation: none; }
+  .glitter i { animation: none; }
 }

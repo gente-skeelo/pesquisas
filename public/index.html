@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#07160f">
-  <title>Quiz do Skee: Festas Juninas pelo mundo</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔥</text></svg>">
+  <meta name="theme-color" content="#0c3221">
+  <title>Quiz do Skee</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎯</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
@@ -13,27 +13,37 @@
   <link rel="stylesheet" href="/estilo.css">
 </head>
 <body>
+  <header class="topo">
+    <div class="topo-in">
+      <span class="logo-skeelo">s<b>k</b>eelo</span>
+      <div class="topo-centro"><span class="pill on">◎ Quiz do Skee</span></div>
+    </div>
+  </header>
+
   <main class="envelope" style="max-width:560px">
 
     <!-- entrada -->
     <section id="tela-entrar" class="tela ativa">
-      <p class="marca">Quiz do Skee · <span class="logo-skeelo">s<b>k</b>eelo</span></p>
-      <h1 id="tit-entrar">Quiz do Skee</h1>
-      <p class="discreto" id="sub-entrar">Digite seu nome pra entrar no arraiá.</p>
-      <div class="cartao" style="margin-top:1.2rem">
+      <h1 id="tit-entrar" style="margin-top:.6rem">Quiz do Skee</h1>
+      <p class="discreto" id="sub-entrar">Digite o PIN da sala e seu nome.</p>
+      <div class="cartao faixa" style="margin-top:1.2rem;--acento:var(--skeelo)">
         <form id="form-entrar" autocomplete="off">
+          <label for="pin" class="discreto" id="rot-pin">PIN da sala</label>
+          <input id="pin" class="campo centro" style="margin:.5rem 0 1rem;font-size:1.8rem;font-weight:700;letter-spacing:.25em"
+                 inputmode="numeric" pattern="[0-9]*" maxlength="6" required
+                 placeholder="000000" enterkeyhint="next">
           <label for="nome" class="discreto" id="rot-nome">Seu nome</label>
-          <input id="nome" class="campo" style="margin:.5rem 0 1rem" maxlength="18" required
+          <input id="nome" class="campo" style="margin:.5rem 0 1.1rem" maxlength="18" required
                  placeholder="Maria" enterkeyhint="go">
           <button class="botao" style="width:100%" id="bt-entrar">Entrar</button>
-          <p id="erro-entrar" class="discreto" style="color:var(--rosa);min-height:1.4em;margin:.7rem 0 0"></p>
+          <p id="erro-entrar" class="discreto" style="color:#c2445f;min-height:1.4em;margin:.7rem 0 0"></p>
         </form>
       </div>
     </section>
 
     <!-- espera -->
     <section id="tela-espera" class="tela centro">
-      <div class="cartao" style="margin-top:15vh">
+      <div class="cartao faixa" style="margin-top:12vh;--acento:var(--op1)">
         <div style="font-size:3rem" id="emoji-espera">🌽</div>
         <h2 id="ola">Beleza!</h2>
         <p class="discreto" id="txt-espera">Aguarde o apresentador começar.</p>
@@ -51,17 +61,18 @@
 
     <!-- resultado da rodada -->
     <section id="tela-feedback" class="tela centro">
-      <div class="cartao" style="margin-top:12vh">
+      <div class="cartao faixa" style="margin-top:10vh;--acento:var(--op2)">
         <div style="font-size:3.4rem" id="emoji-feedback">🎉</div>
         <h2 id="veredito"></h2>
         <p id="ganho" style="font-size:1.6rem;font-weight:800;color:var(--milho);margin:.2rem 0"></p>
+        <p id="sequencia" style="font-weight:600;color:var(--skeelo-escuro);min-height:1.4em;margin:.2rem 0"></p>
         <p class="discreto" id="situacao"></p>
       </div>
     </section>
 
     <!-- fim -->
     <section id="tela-fim" class="tela centro">
-      <div class="cartao" style="margin-top:8vh">
+      <div class="cartao faixa" style="margin-top:6vh;--acento:var(--skeelo)">
         <div style="font-size:3.4rem" id="emoji-fim">🏆</div>
         <h2 id="tit-fim">Fim de festa!</h2>
         <p id="resumo-fim" style="font-size:1.15rem"></p>

@@ -79,6 +79,8 @@ const QUIZ_TESTE = {
   ],
 };
 
+let PIN = '';
+
 const servidor = spawn(process.execPath, ['server.js'], {
   env: {
     ...process.env,
@@ -99,6 +101,7 @@ try {
   conferir('/api/saude responde', saude.ok === true);
   conferir('começa no menu', saude.fase === 'menu', `veio ${saude.fase}`);
   conferir('semente na biblioteca', saude.quizzes === 1, `veio ${saude.quizzes}`);
+  conferir('sem PIN antes de abrir quiz', saude.pin === '', saude.pin);
 
   const negado = await fetch(`${BASE}/host?k=errada`);
   conferir('/host recusa chave errada', negado.status === 401, `status ${negado.status}`);
@@ -139,25 +142,36 @@ try {
   await host.ate((c) => c.estado.quizzes.some((q) => q.titulo === 'Teste do Skee v2'), 'edição salva');
   conferir('editar não duplica', host.estado.quizzes.length === 2, `veio ${host.estado.quizzes.length}`);
 
-  console.log('\nEntrada antes do quiz escolhido');
-  const ana = cliente();
-  await ana.aberto();
-  ana.envia({ t: 'entrar', nome: 'Ana' });
-  await ana.ate((c) => c.eu, 'entrada da Ana');
-  await ana.ate((c) => c.estado, 'estado da Ana');
-  conferir('jogador entra durante o menu', ana.estado.fase === 'menu');
+  console.log('\nEntrada exige sala aberta');
+  const cedo = cliente();
+  await cedo.aberto();
+  cedo.envia({ t: 'entrar', nome: 'Cedo', pin: '000000' });
+  await cedo.ate((c) => c.erro, 'recusa sem sala aberta');
+  conferir('sem sala aberta ninguém entra', cedo.erro === 'sem-sala', cedo.erro);
+  cedo.ws.close();
 
-  console.log('\nLobby');
+  console.log('\nLobby e PIN');
   host.envia({ t: 'abrirQuiz', id: idTeste });
   await host.ate((c) => c.estado.fase === 'lobby', 'lobby');
   conferir('abre o quiz escolhido', host.estado.quiz === 'Teste do Skee v2');
-  conferir('quem entrou antes segue na sala', host.estado.jogadores.length === 1);
+  PIN = host.estado.pin;
+  conferir('PIN de 6 dígitos gerado', /^\d{6}$/.test(PIN), PIN);
 
-  const jogadores = [ana];
-  for (const nome of ['Bento', 'Cida']) {
+  const entradaPin = await (await fetch(`${BASE}/api/entrada?pin=${PIN}`)).json();
+  conferir('QR leva o PIN na URL', entradaPin.url.includes('pin=' + PIN), entradaPin.url);
+
+  const errado = cliente();
+  await errado.aberto();
+  errado.envia({ t: 'entrar', nome: 'Chutador', pin: '999999' });
+  await errado.ate((c) => c.erro, 'recusa de PIN errado');
+  conferir('PIN errado é recusado', errado.erro === 'pin', errado.erro);
+  errado.ws.close();
+
+  const jogadores = [];
+  for (const nome of ['Ana', 'Bento', 'Cida']) {
     const j = cliente();
     await j.aberto();
-    j.envia({ t: 'entrar', nome });
+    j.envia({ t: 'entrar', nome, pin: PIN });
     await j.ate((c) => c.eu, `entrada de ${nome}`);
     jogadores.push(j);
   }
@@ -166,7 +180,7 @@ try {
 
   const clone = cliente();
   await clone.aberto();
-  clone.envia({ t: 'entrar', nome: 'ana' });
+  clone.envia({ t: 'entrar', nome: 'ana', pin: PIN });
   await clone.ate((c) => c.erro, 'recusa de nome repetido');
   conferir('nome repetido é recusado', clone.erro === 'repetido');
   clone.ws.close();
@@ -197,6 +211,9 @@ try {
   conferir('quem errou não pontuou', c3.pontos === 0, `fez ${c3.pontos}`);
   conferir('quem respondeu antes fez mais pontos', a.pontos > b.pontos, `${a.pontos} vs ${b.pontos}`);
   conferir('jogador vê sua posição', a.posicao === 1);
+  conferir('acerto abre sequência', a.serie === 1, `serie ${a.serie}`);
+  conferir('erro zera a sequência', c3.serie === 0, `serie ${c3.serie}`);
+  conferir('primeiro acerto ainda não tem bônus de série', a.ganho <= 1000, `ganho ${a.ganho}`);
 
   jogadores[0].envia({ t: 'responder', q: 0, opcao: 1 });   // fora de fase, ignorada
   await espera(150);
@@ -232,12 +249,19 @@ try {
   conferir('pergunta 2 vem em inglês', host.estado.enunciado === 'June test question two?',
            host.estado.enunciado);
 
+  jogadores[0].envia({ t: 'responder', q: 1, opcao: 1 });   // Ana acerta de novo
+  await espera(120);
   jogadores[2].envia({ t: 'responder', q: 1, opcao: 1 });   // correta
   await espera(120);
   host.envia({ t: 'revelar' });
   await host.ate((cl) => cl.estado.fase === 'revelacao', 'revelação manual');
   conferir('revelação manual funciona', host.estado.correta === 1);
-  conferir('quem não respondeu não pontuou', jogadores[0].estado.ganho === 0);
+  conferir('quem não respondeu não pontuou', jogadores[1].estado.ganho === 0);
+  await jogadores[0].ate((cl) => cl.estado.fase === 'revelacao', 'revelação na Ana');
+  conferir('sequência cresce no acerto seguido', jogadores[0].estado.serie === 2,
+           `serie ${jogadores[0].estado.serie}`);
+  conferir('bônus de série entra no ganho', jogadores[0].estado.ganho > 1000 - 500,
+           `ganho ${jogadores[0].estado.ganho}`);
 
   host.envia({ t: 'encerrar' });
   await host.ate((cl) => cl.estado.fase === 'fim', 'fim');
@@ -250,6 +274,9 @@ try {
   conferir('jogar de novo mantém o quiz', host.estado.quiz === 'Teste do Skee v2');
   conferir('jogar de novo zera a pontuação', host.estado.ranking.every((r) => r.pontos === 0));
   conferir('jogar de novo mantém a sala', host.estado.jogadores.length === 3);
+  conferir('jogar de novo gera PIN novo', /^\d{6}$/.test(host.estado.pin));
+  await jogadores[0].ate((cl) => cl.estado.serie === 0, 'série zerada');
+  conferir('jogar de novo zera a sequência', jogadores[0].estado.serie === 0);
 
   host.erro = null;
   host.envia({ t: 'excluirQuiz', id: idTeste });
@@ -259,11 +286,18 @@ try {
   host.envia({ t: 'menu' });
   await host.ate((cl) => cl.estado.fase === 'menu', 'menu');
   conferir('menu limpa o quiz ativo', host.estado.quiz === '' && host.estado.total === 0);
+  conferir('menu limpa o PIN', host.estado.pin === '', host.estado.pin);
   await jogadores[0].ate((cl) => cl.estado.fase === 'menu', 'menu no jogador');
   conferir('jogador volta pra espera do menu', jogadores[0].estado.fase === 'menu');
 
+  host.envia({ t: 'duplicarQuiz', id: idTeste });
+  await host.ate((cl) => cl.estado.quizzes.length === 3, 'duplicação');
+  conferir('duplicar cria cópia com titulo marcado',
+           host.estado.quizzes.some((q) => q.titulo === 'Teste do Skee v2 (cópia)'),
+           JSON.stringify(host.estado.quizzes.map((q) => q.titulo)));
+
   host.envia({ t: 'excluirQuiz', id: idTeste });
-  await host.ate((cl) => cl.estado.quizzes.length === 1, 'exclusão');
+  await host.ate((cl) => cl.estado.quizzes.length === 2, 'exclusão');
   conferir('exclui do menu', host.estado.quizzes.every((q) => q.id !== idTeste));
 
   console.log('\nRemoção pelo apresentador');
