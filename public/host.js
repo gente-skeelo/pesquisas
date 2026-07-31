@@ -62,9 +62,6 @@ let timersFesta = [];
 let radioSeq = 0;
 const confete = Confete($('confete'));
 
-const faixa = document.querySelector('.bandeirinhas');
-for (let i = 0; i < 60; i++) faixa.appendChild(document.createElement('i'));
-
 function mostrar(qual) {
   telas.forEach((t) => $('tela-' + t).classList.toggle('ativa', t === qual));
   $('barra-controle').classList.toggle('escondida', qual === 'menu' || qual === 'editor');

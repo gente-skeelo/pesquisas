@@ -63,10 +63,6 @@ let estado = null;
 let festejei = false;
 const confete = Confete(document.getElementById('confete'));
 
-/* bandeirinhas */
-const faixa = document.querySelector('.bandeirinhas');
-for (let i = 0; i < 40; i++) faixa.appendChild(document.createElement('i'));
-
 function mostrar(qual) {
   telas.forEach((t) => $('tela-' + t).classList.toggle('ativa', t === qual));
 }
