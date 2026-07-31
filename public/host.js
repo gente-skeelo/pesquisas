@@ -55,6 +55,9 @@ const telas = ['lobby', 'jogo', 'placar', 'fim'];
 let ws = null;
 let idioma = 'pt';
 let ultimaQ = -1;
+let festaMontada = false;
+let timersFesta = [];
+const confete = Confete(document.getElementById('confete'));
 
 const faixa = document.querySelector('.bandeirinhas');
 for (let i = 0; i < 60; i++) faixa.appendChild(document.createElement('i'));
@@ -91,6 +94,7 @@ function conectar() {
 function pintar(e) {
   idioma = e.idioma;
   const t = T[idioma];
+  if (e.fase !== 'fim') desmontarFesta();
 
   document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'en';
   $('bt-pt').classList.toggle('on', idioma === 'pt');
@@ -166,11 +170,70 @@ function pintar(e) {
   }
 
   if (e.fase === 'fim') {
-    pintarLista($('podio'), e.ranking, true);
+    montarFesta(e);
     principal.textContent = t.reiniciar;
     principal.onclick = () => enviar({ t: 'reiniciar' });
     return mostrar('fim');
   }
+}
+
+/* pódio estilo Kahoot: 3º sobe, depois 2º, depois 1º com confete */
+function montarFesta(e) {
+  if (festaMontada) return;
+  festaMontada = true;
+
+  const palco = $('podio-palco');
+  palco.innerHTML = '';
+  const top = e.ranking.slice(0, 3);
+
+  [1, 0, 2].forEach((idx) => {                       // exibição: 2º | 1º | 3º
+    if (!top[idx]) return;
+    const col = document.createElement('div');
+    col.className = 'coluna c' + (idx + 1);
+    col.innerHTML =
+      '<div class="medalha"></div><div class="quem"></div>' +
+      '<div class="qtd">0</div><div class="bloco"></div>';
+    col.querySelector('.medalha').textContent = ['🥇', '🥈', '🥉'][idx];
+    col.querySelector('.quem').textContent = top[idx].nome;
+    col.querySelector('.qtd').dataset.alvo = top[idx].pontos;
+    col.querySelector('.bloco').textContent = idx + 1;
+    palco.appendChild(col);
+  });
+
+  pintarLista($('podio'), e.ranking.slice(3));       // do 4º em diante
+
+  const revelar = (idx) => {
+    const col = palco.querySelector('.c' + (idx + 1));
+    if (!col) return;
+    col.classList.add('sobe');
+    contarAte(col.querySelector('.qtd'));
+    confete.estourar({ 0: 0.5, 1: 0.32, 2: 0.68 }[idx], 0.45, idx === 0 ? 170 : 70);
+    if (idx === 0) {
+      timersFesta.push(setTimeout(() => confete.estourar(0.15, 0.3, 90), 450));
+      timersFesta.push(setTimeout(() => confete.estourar(0.85, 0.3, 90), 900));
+    }
+  };
+  timersFesta.push(setTimeout(() => revelar(2), 500));
+  timersFesta.push(setTimeout(() => revelar(1), 1700));
+  timersFesta.push(setTimeout(() => revelar(0), 3100));
+}
+
+function desmontarFesta() {
+  if (!festaMontada) return;
+  festaMontada = false;
+  timersFesta.forEach(clearTimeout);
+  timersFesta = [];
+  confete.parar();
+}
+
+function contarAte(el) {
+  const alvo = Number(el.dataset.alvo || 0);
+  const inicio = performance.now();
+  (function tique(agora) {
+    const f = Math.min(1, (agora - inicio) / 900);
+    el.textContent = Math.round(alvo * (2 - f) * f);   // desacelera no final
+    if (f < 1) requestAnimationFrame(tique);
+  })(inicio);
 }
 
 function pintarLista(ol, lista, medalhas = false) {

@@ -60,7 +60,7 @@
     <!-- fim -->
     <section id="tela-fim" class="tela centro">
       <div class="cartao" style="margin-top:8vh">
-        <div style="font-size:3.4rem">🏆</div>
+        <div style="font-size:3.4rem" id="emoji-fim">🏆</div>
         <h2 id="tit-fim">Fim de festa!</h2>
         <p id="resumo-fim" style="font-size:1.15rem"></p>
         <ol class="lista" id="podio" style="margin-top:1.2rem;text-align:left"></ol>
@@ -70,6 +70,10 @@
     <p class="discreto centro" id="rodape" style="margin-top:2rem"></p>
   </main>
 
+  <canvas id="confete" aria-hidden="true"
+          style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60"></canvas>
+
+  <script src="/confete.js"></script>
   <script src="/jogador.js"></script>
 </body>
 </html>

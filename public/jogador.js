@@ -58,6 +58,8 @@ let meuNome = localStorage.getItem('quiz-nome') || '';
 let idioma = 'pt';
 let ultimaQ = -1;
 let estado = null;
+let festejei = false;
+const confete = Confete(document.getElementById('confete'));
 
 /* bandeirinhas */
 const faixa = document.querySelector('.bandeirinhas');
@@ -125,6 +127,8 @@ function pintar(e) {
 
   if (!token) return mostrar('entrar');
 
+  if (e.fase !== 'fim') festejei = false;
+
   if (e.fase === 'lobby') {
     $('ola').textContent = t.ola(e.nome || meuNome);
     $('txt-espera').textContent = t.espera;
@@ -160,8 +164,18 @@ function pintar(e) {
   }
 
   if (e.fase === 'fim') {
+    $('emoji-fim').textContent = ['🏆', '🥈', '🥉'][e.posicao - 1] || '🌽';
     $('tit-fim').textContent = t.fim;
     $('resumo-fim').textContent = t.resumo(e.pontos, e.posicao);
+    if (!festejei) {
+      festejei = true;
+      if (e.posicao >= 1 && e.posicao <= 3) {
+        confete.estourar(0.5, 0.35, 110);
+        setTimeout(() => confete.estourar(0.25, 0.3, 60), 500);
+        setTimeout(() => confete.estourar(0.75, 0.3, 60), 1000);
+        if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+      }
+    }
     const ol = $('podio');
     ol.innerHTML = '';
     (e.podio || []).forEach((p, i) => {
