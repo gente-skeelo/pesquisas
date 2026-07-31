@@ -68,3 +68,28 @@ window.Confete = function (canvas) {
 
   return { estourar, parar: () => { pecas = []; } };
 };
+
+/* Glitter ambiente: estrelinhas cintilando espalhadas pela tela.
+   Roda sozinho em qualquer página que carregue este arquivo. */
+(function glitter() {
+  const camada = document.createElement('div');
+  camada.className = 'glitter';
+  camada.setAttribute('aria-hidden', 'true');
+
+  const SIMBOLOS = ['✦', '✧', '✨', '·'];
+  const CORES = ['#fff', '#ffc93c', '#35e598', '#4cc9f0'];
+
+  for (let i = 0; i < 28; i++) {
+    const s = document.createElement('i');
+    s.textContent = SIMBOLOS[(Math.random() * SIMBOLOS.length) | 0];
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.fontSize = 6 + Math.random() * 12 + 'px';
+    s.style.color = CORES[(Math.random() * CORES.length) | 0];
+    s.style.setProperty('--d', (2.4 + Math.random() * 3.6).toFixed(2) + 's');
+    s.style.setProperty('--a', (Math.random() * 5).toFixed(2) + 's');
+    s.style.setProperty('--o', (0.35 + Math.random() * 0.45).toFixed(2));
+    camada.appendChild(s);
+  }
+  document.body.appendChild(camada);
+})();

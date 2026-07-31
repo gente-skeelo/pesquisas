@@ -107,30 +107,66 @@ p { line-height: 1.5; }
 }
 
 .botao {
+  position: relative;
+  overflow: hidden;
   font: inherit;
   font-weight: 700;
   color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .25);
   background: linear-gradient(135deg, var(--skeelo), var(--skeelo-claro));
   border: 0;
   border-radius: 999px;
   padding: .85rem 1.6rem;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0, 196, 113, .35);
-  transition: transform .12s ease, filter .12s ease;
+  box-shadow:
+    0 6px 18px rgba(0, 196, 113, .35),
+    inset 0 1px 0 rgba(255, 255, 255, .4),
+    inset 0 -2px 0 rgba(0, 0, 0, .18);
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
 }
-.botao:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+.botao::after {                          /* brilho que varre o botão */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, .5) 50%, transparent 68%);
+  transform: translateX(-140%) skewX(-12deg);
+  animation: varre 4.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.botao.fantasma::after, .botao.perigo::after, .botao:disabled::after { animation: none; }
+.botao:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow:
+    0 10px 26px rgba(0, 196, 113, .5),
+    inset 0 1px 0 rgba(255, 255, 255, .4),
+    inset 0 -2px 0 rgba(0, 0, 0, .18);
+}
+.botao:active:not(:disabled) { transform: translateY(1px) scale(.98); }
 .botao:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 .botao.fantasma {
   background: transparent;
   color: var(--creme);
   border: 1px solid var(--borda);
   box-shadow: none;
+  text-shadow: none;
+}
+.botao.fantasma:hover:not(:disabled) {
+  border-color: var(--skeelo-claro);
+  background: rgba(0, 196, 113, .12);
+  box-shadow: 0 6px 18px rgba(0, 196, 113, .2);
 }
 .botao.perigo {
   background: transparent;
   color: var(--rosa);
   border: 1px solid var(--rosa);
   box-shadow: none;
+  text-shadow: none;
+}
+.botao.perigo:hover:not(:disabled) { background: rgba(239, 71, 111, .14); }
+@keyframes varre {
+  0%, 55% { transform: translateX(-140%) skewX(-12deg); }
+  75%, 100% { transform: translateX(140%) skewX(-12deg); }
 }
 
 .campo {
@@ -153,6 +189,8 @@ p { line-height: 1.5; }
 @media (max-width: 640px) { .opcoes { grid-template-columns: 1fr; } }
 
 .opcao {
+  position: relative;
+  overflow: hidden;
   font: inherit;
   font-weight: 600;
   text-align: left;
@@ -165,9 +203,22 @@ p { line-height: 1.5; }
   border-radius: 18px;
   color: #16111f;
   cursor: pointer;
-  transition: transform .12s ease, opacity .2s ease, box-shadow .2s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .35);
+  transition: transform .12s ease, opacity .2s ease, box-shadow .2s ease, filter .12s ease;
 }
-.opcao:hover:not(:disabled) { transform: translateY(-2px); }
+.opcao::before {                         /* verniz na metade de cima */
+  content: '';
+  position: absolute;
+  inset: 0 0 55%;
+  background: linear-gradient(rgba(255, 255, 255, .28), rgba(255, 255, 255, .04));
+  pointer-events: none;
+}
+.opcao:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: saturate(1.15) brightness(1.05);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+.opcao:active:not(:disabled) { transform: scale(.97); }
 .opcao:disabled { cursor: default; }
 .opcao .forma { font-size: 1.3rem; line-height: 1; }
 .opcao[data-i="0"] { background: var(--op0); }
@@ -211,3 +262,27 @@ p { line-height: 1.5; }
 
 .discreto { opacity: .7; font-size: .92rem; }
 .centro { text-align: center; }
+
+/* glitter de fundo — estrelinhas geradas pelo confete.js */
+.glitter {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.glitter i {
+  position: absolute;
+  font-style: normal;
+  opacity: 0;
+  animation: cintila var(--d, 3s) ease-in-out var(--a, 0s) infinite;
+  text-shadow: 0 0 6px currentColor;
+  will-change: opacity, transform;
+}
+@keyframes cintila {
+  0%, 100% { opacity: 0; transform: scale(.35) rotate(0deg); }
+  50%      { opacity: var(--o, .8); transform: scale(1) rotate(25deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glitter i, .botao::after { animation: none; }
+}
