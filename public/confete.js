@@ -3,7 +3,7 @@
 
 window.Confete = function (canvas) {
   const ctx = canvas.getContext('2d');
-  const CORES = ['#ef476f', '#ffc93c', '#06d6a0', '#4cc9f0', '#ff6b35', '#fff6e5'];
+  const CORES = ['#ffb3c1', '#ffd76a', '#3ddc97', '#a5dcf5', '#ffa87c', '#00b871'];
   let pecas = [];
   let rodando = false;
 
@@ -77,7 +77,7 @@ window.Confete = function (canvas) {
   camada.setAttribute('aria-hidden', 'true');
 
   const SIMBOLOS = ['✦', '✧', '✨', '·'];
-  const CORES = ['#fff', '#ffc93c', '#35e598', '#4cc9f0'];
+  const CORES = ['#00b871', '#eda60a', '#3ddc97', '#59c3ea'];
 
   for (let i = 0; i < 28; i++) {
     const s = document.createElement('i');
