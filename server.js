@@ -327,7 +327,7 @@ app.use(express.static(publico, { maxAge: '1h' }));
 app.get('/host', (req, res) => {
   if ((req.query.k || '') !== CHAVE_HOST) {
     return res.status(401).type('html').send(
-      '<meta charset="utf-8"><body style="font:16px/1.5 system-ui;background:#160b26;color:#fff;padding:3rem">' +
+      '<meta charset="utf-8"><body style="font:16px/1.5 system-ui;background:#07160f;color:#fff;padding:3rem">' +
         '<h1>Chave inválida</h1><p>O modo apresentador precisa de <code>?k=SUA_CHAVE</code>.</p></body>',
     );
   }

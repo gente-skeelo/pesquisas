@@ -2,14 +2,14 @@
    PALETA SKEELO: ajuste os tons oficiais da marca aqui, o resto acompanha. */
 
 :root {
-  --skeelo:       #7b2ff2;   /* roxo da marca */
-  --skeelo-claro: #a45cff;
-  --skeelo-fundo: #150a26;   /* quase-preto arroxeado */
-  --skeelo-fundo2:#241040;
+  --skeelo:       #00c471;   /* verde da marca */
+  --skeelo-claro: #35e598;
+  --skeelo-fundo: #07160f;   /* quase-preto esverdeado */
+  --skeelo-fundo2:#0e2a1c;
 
   --carta:  rgba(255, 255, 255, .07);
   --borda:  rgba(255, 255, 255, .14);
-  --creme:  #f7f2ff;
+  --creme:  #f0fbf4;
   --milho:  #ffc93c;         /* acento quente (pontos, destaques) */
   --fogo:   #ff6b35;
   --verde:  #06d6a0;
@@ -35,8 +35,8 @@ body {
   font-family: var(--fonte);
   color: var(--creme);
   background:
-    radial-gradient(1100px 700px at 15% -10%, #3c1a6e 0%, transparent 60%),
-    radial-gradient(900px 600px at 100% 0%, #2c1257 0%, transparent 55%),
+    radial-gradient(1100px 700px at 15% -10%, #145032 0%, transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, #0e3d2b 0%, transparent 55%),
     var(--skeelo-fundo);
   background-attachment: fixed;
   padding-top: 18px;                 /* espaço das bandeirinhas */
@@ -115,7 +115,7 @@ p { line-height: 1.5; }
   border-radius: 999px;
   padding: .85rem 1.6rem;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(123, 47, 242, .35);
+  box-shadow: 0 6px 18px rgba(0, 196, 113, .35);
   transition: transform .12s ease, filter .12s ease;
 }
 .botao:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
