@@ -1,22 +1,25 @@
 import { chromium } from 'playwright';
 const dir = process.argv[2];
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
-const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const erros = [];
+const p = await b.newPage({ viewport: { width: 1280, height: 820 } });
+p.on('pageerror', (e) => erros.push(e.message));
 await p.goto('http://127.0.0.1:4477/host?k=foto', { waitUntil: 'networkidle' });
 await p.waitForTimeout(1000);
-await p.click('.ac-jogar');
+await p.click('.card-novo');
+await p.waitForTimeout(600);
+// preenche uma pergunta e tenta traduzir sem chave: deve avisar, não travar
+await p.fill('.c-enun', 'Qual é a capital da Austrália?');
+const ops = await p.$$('.ed-alt .c-op');
+for (const [i, txt] of ['Sydney', 'Camberra', 'Melbourne', 'Perth'].entries()) await ops[i].fill(txt);
+await p.click('.ed-alt[data-i="1"] .marcar');
+await p.click('#ed-traduzir-tudo');
 await p.waitForTimeout(700);
-const pin = await p.textContent('#pin-grande');
-
-// celular entra ANTES de começar
-const c = await b.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
-await c.goto('http://127.0.0.1:4477/?pin=' + pin, { waitUntil: 'networkidle' });
-await c.waitForTimeout(800);
-await c.fill('#nome', 'Bruno');
-await c.click('#bt-entrar');
-await c.waitForTimeout(800);
-
-await p.click('#bt-principal');           // começa a partida
-await p.waitForTimeout(1000);
-await c.screenshot({ path: dir + '/r-celular-pergunta.png' });
+const aviso = await p.textContent('#ed-erro');
+const travado = await p.$eval('#ed-traduzir-tudo', (b) => b.disabled);
+console.log('aviso:', aviso.trim());
+console.log('botão destravado depois do aviso:', !travado);
+await p.evaluate(() => window.scrollTo(0, 380));
+await p.screenshot({ path: dir + '/r-traducao.png' });
+console.log(erros.length ? 'ERROS: ' + erros.join(' | ') : 'sem erros de página');
 await b.close();

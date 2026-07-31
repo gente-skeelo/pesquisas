@@ -419,15 +419,17 @@
       <div class="cartao faixa" style="--acento:var(--op2);margin-top:16px">
         <label class="ed-rot">Tradução automática</label>
         <div class="ed-linha" style="margin-top:0;align-items:center">
-          <select class="campo campo-curto" id="ed-idioma-alvo">
-            <option value="en">English</option>
-            <option value="es">Español</option>
+          <select class="campo" id="ed-idioma-alvo" style="width:auto;min-width:190px">
+            <option value="ambos">Inglês e espanhol</option>
+            <option value="en">Só inglês</option>
+            <option value="es">Só espanhol</option>
           </select>
           <button class="botao fantasma" id="ed-traduzir-tudo">✨ Traduzir todas as perguntas</button>
           <span class="discreto" id="ed-status"></span>
         </div>
         <p class="discreto" style="margin:.6rem 0 0">
-          Escreva em português e traduza; cada pergunta também tem seu próprio botão. Revise antes de salvar.
+          Escreva em português e traduza. Com "Inglês e espanhol" os dois saem de uma vez, um depois do
+          outro. Cada pergunta também tem botão próprio por idioma. Revise antes de salvar.
         </p>
       </div>
 

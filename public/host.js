@@ -521,8 +521,10 @@ function lerCarta(f) {
   return carta;
 }
 
-/** Preenche o idioma pedido com tradução automática (uma pergunta ou todas). */
-function traduzirPerguntas(idioma, apenas) {
+const NOME_IDIOMA = { en: 'inglês', es: 'espanhol' };
+
+/** Traduz uma pergunta ou o quiz inteiro. `alvo` pode ser 'en', 'es' ou 'ambos'. */
+function traduzirPerguntas(alvo, apenas) {
   if (!podeTraduzir) {
     $('ed-erro').textContent =
       'Tradução automática desligada: falta a variável ANTHROPIC_API_KEY no servidor.';
@@ -534,23 +536,41 @@ function traduzirPerguntas(idioma, apenas) {
     $('ed-erro').textContent = 'Escreva a pergunta e as 4 alternativas em português antes de traduzir.';
     return;
   }
+
   $('ed-erro').textContent = '';
-  traduzindo = { idioma, blocos };
-  document.querySelectorAll('.bt-traduzir, #ed-traduzir-tudo').forEach((b) => { b.disabled = true; });
-  $('ed-status').textContent = 'Traduzindo…';
-  enviar({ t: 'traduzir', idioma, cartas });
+  travarTraducao(true);
+  traduzindo = { fila: alvo === 'ambos' ? ['en', 'es'] : [alvo], blocos, cartas, feitos: [] };
+  pedirProximaTraducao();
+}
+
+/** Manda o próximo idioma da fila — os dois idiomas vão em sequência, não juntos. */
+function pedirProximaTraducao() {
+  const idioma = traduzindo.fila[0];
+  const total = traduzindo.fila.length + traduzindo.feitos.length;
+  const passo = traduzindo.feitos.length + 1;
+  $('ed-status').textContent = total > 1
+    ? `Traduzindo para ${NOME_IDIOMA[idioma]}… (${passo} de ${total})`
+    : `Traduzindo para ${NOME_IDIOMA[idioma]}…`;
+  enviar({ t: 'traduzir', idioma, cartas: traduzindo.cartas });
+}
+
+function travarTraducao(travado) {
+  document.querySelectorAll('.bt-traduzir, #ed-traduzir-tudo').forEach((b) => {
+    b.disabled = travado;
+  });
 }
 
 function destravarTraducao(msg) {
   traduzindo = null;
-  document.querySelectorAll('.bt-traduzir, #ed-traduzir-tudo').forEach((b) => { b.disabled = false; });
+  travarTraducao(false);
   $('ed-status').textContent = '';
   $('ed-erro').textContent = msg;
 }
 
 function receberTraducao(idioma, cartas) {
-  const alvo = traduzindo && traduzindo.idioma === idioma ? traduzindo.blocos : [];
-  alvo.forEach((f, i) => {
+  if (!traduzindo || traduzindo.fila[0] !== idioma) return;
+
+  traduzindo.blocos.forEach((f, i) => {
     const t = cartas[i];
     if (!t) return;
     f.querySelector(`details[data-lang="${idioma}"]`).open = true;
@@ -558,9 +578,15 @@ function receberTraducao(idioma, cartas) {
     f.querySelectorAll(`.c-${idioma}-op`).forEach((el, j) => { el.value = t.opcoes[j] || ''; });
     f.querySelector(`.c-${idioma}-cur`).value = t.curiosidade || '';
   });
+
+  traduzindo.feitos.push(traduzindo.fila.shift());
+
+  if (traduzindo.fila.length) return pedirProximaTraducao();
+
+  const nomes = traduzindo.feitos.map((c) => NOME_IDIOMA[c]).join(' e ');
   traduzindo = null;
-  document.querySelectorAll('.bt-traduzir, #ed-traduzir-tudo').forEach((b) => { b.disabled = false; });
-  $('ed-status').textContent = 'Tradução pronta — revise antes de salvar.';
+  travarTraducao(false);
+  $('ed-status').textContent = `Tradução para ${nomes} pronta — revise antes de salvar.`;
 }
 
 function serializarEditor() {
