@@ -324,7 +324,11 @@ p { line-height: 1.55; }
   overflow: hidden;
   pointer-events: none;
   z-index: 5;
+  opacity: 0;
+  transition: opacity .4s ease;
 }
+/* aparece só quando a partida está rolando, não nas telas de trabalho */
+body.festa .glitter { opacity: 1; }
 .glitter i {
   position: absolute;
   font-style: normal;

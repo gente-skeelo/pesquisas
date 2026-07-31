@@ -142,6 +142,7 @@ function pintar(e) {
   principal.disabled = false;
 
   if (e.pin !== qrDoPin) carregarEntrada(e.pin);
+  document.body.classList.toggle('festa', e.fase !== 'menu');
 
   if (e.fase === 'menu') {
     pintarMenu(e);
@@ -260,6 +261,7 @@ function pintarMenu(e) {
 
 function abrirEditor(quiz) {
   visao = 'editor';
+  document.body.classList.remove('festa');
   $('ed-erro').textContent = '';
   $('ed-cabecalho').textContent = quiz ? 'Editar quiz' : 'Novo quiz';
   $('ed-titulo').value = quiz ? quiz.titulo : '';
@@ -277,45 +279,70 @@ function fecharEditor() {
   if (ultimoEstado) pintar(ultimoEstado);
 }
 
+const TEMPOS = [10, 15, 20, 30, 45, 60, 90, 120];
+
 function blocoCarta(c) {
   const grupo = 'certa-' + radioSeq++;
   const f = document.createElement('fieldset');
   f.className = 'ed-carta';
 
-  let ops = '';
-  for (let i = 0; i < 4; i++) {
-    ops +=
-      `<div class="ed-op"><input type="radio" name="${grupo}" value="${i}" title="Correta">` +
+  const alt = (i, en) =>
+    `<div class="ed-alt" data-i="${i}">` +
       `<span class="forma">${FORMAS[i]}</span>` +
-      `<input class="campo c-op" maxlength="160" placeholder="Alternativa ${i + 1}"></div>`;
-  }
-  let opsEn = '';
-  for (let i = 0; i < 4; i++) {
-    opsEn +=
-      `<div class="ed-op"><span class="forma">${FORMAS[i]}</span>` +
-      `<input class="campo c-en-op" maxlength="160" placeholder="Option ${i + 1}"></div>`;
-  }
+      `<input class="campo ${en ? 'c-en-op' : 'c-op'}" maxlength="160" ` +
+        `placeholder="${en ? 'Option' : 'Alternativa'} ${i + 1}">` +
+      (en ? '' :
+        `<label class="marcar" title="Marcar como correta">` +
+          `<input type="radio" name="${grupo}" value="${i}">✓</label>`) +
+    '</div>';
 
   f.innerHTML =
-    '<legend></legend>' +
-    '<textarea class="campo c-enun" maxlength="300" placeholder="Enunciado da pergunta"></textarea>' +
-    '<p class="discreto" style="margin:.7rem 0 .2rem">Marque a bolinha da alternativa correta:</p>' +
-    ops +
-    '<div class="ed-linha" style="margin-top:.6rem">' +
-    '<label>Tempo (s) <input type="number" class="campo campo-curto c-seg" min="5" max="120" value="20"></label>' +
+    '<div class="ed-topo">' +
+      '<span class="ed-num"></span>' +
+      '<span class="ed-titulo-q">Pergunta</span>' +
+      '<span class="ed-ferramentas">' +
+        '<button type="button" class="sobe" title="Mover para cima">↑</button>' +
+        '<button type="button" class="desce" title="Mover para baixo">↓</button>' +
+        '<button type="button" class="dup" title="Duplicar pergunta">⧉</button>' +
+        '<button type="button" class="rem" title="Remover pergunta">✕</button>' +
+      '</span>' +
     '</div>' +
-    '<textarea class="campo c-cur" maxlength="500" placeholder="Curiosidade (opcional — aparece na revelação)" style="margin-top:.6rem"></textarea>' +
-    '<details><summary>English (opcional)</summary>' +
-    '<textarea class="campo c-en-enun" maxlength="300" placeholder="Question in English" style="margin-top:.6rem"></textarea>' +
-    opsEn +
-    '<textarea class="campo c-en-cur" maxlength="500" placeholder="Fun fact (optional)"></textarea>' +
-    '</details>' +
-    '<div class="ed-rodape"><span></span><button type="button" class="botao perigo c-remover">Remover pergunta</button></div>';
+    '<textarea class="campo c-enun" maxlength="300" placeholder="Escreva a pergunta"></textarea>' +
+    `<div class="ed-alts">${alt(0)}${alt(1)}${alt(2)}${alt(3)}</div>` +
+    '<p class="discreto" style="margin:.55rem 0 0;font-size:.85rem">Clique no ✓ para marcar a alternativa correta.</p>' +
+    '<div class="ed-linha">' +
+      '<div><label class="ed-rot">Tempo de resposta</label>' +
+        '<select class="campo campo-curto c-seg">' +
+          TEMPOS.map((t) => `<option value="${t}">${t} segundos</option>`).join('') +
+        '</select></div>' +
+      '<div style="flex:1;min-width:240px"><label class="ed-rot">Curiosidade (opcional)</label>' +
+        '<textarea class="campo c-cur" maxlength="500" ' +
+          'placeholder="Aparece na tela grande quando a resposta é revelada"></textarea></div>' +
+    '</div>' +
+    '<details><summary>Versão em inglês (opcional)</summary>' +
+      '<textarea class="campo c-en-enun" maxlength="300" placeholder="Question in English" ' +
+        'style="margin-top:.7rem"></textarea>' +
+      `<div class="ed-en-grade">${alt(0, true)}${alt(1, true)}${alt(2, true)}${alt(3, true)}</div>` +
+      '<textarea class="campo c-en-cur" maxlength="500" placeholder="Fun fact (optional)" ' +
+        'style="margin-top:.7rem"></textarea>' +
+    '</details>';
+
+  /* marcar a correta pinta a linha inteira */
+  const marcarLinha = () => {
+    f.querySelectorAll('.ed-alts .ed-alt').forEach((linha) => {
+      linha.classList.toggle('correta', linha.querySelector('input[type="radio"]').checked);
+    });
+  };
+  f.querySelectorAll('input[type="radio"]').forEach((r) => r.addEventListener('change', marcarLinha));
 
   if (c) {
     f.querySelector('.c-enun').value = c.pt.enunciado;
     f.querySelectorAll('.c-op').forEach((el, i) => { el.value = c.pt.opcoes[i] || ''; });
     f.querySelectorAll(`input[name="${grupo}"]`)[c.correta].checked = true;
+    if (!TEMPOS.includes(c.segundos)) {
+      const extra = new Option(c.segundos + ' segundos', c.segundos);
+      f.querySelector('.c-seg').add(extra);
+    }
     f.querySelector('.c-seg').value = c.segundos;
     f.querySelector('.c-cur').value = c.pt.curiosidade || '';
     if (c.en) {
@@ -324,52 +351,79 @@ function blocoCarta(c) {
       f.querySelectorAll('.c-en-op').forEach((el, i) => { el.value = c.en.opcoes[i] || ''; });
       f.querySelector('.c-en-cur').value = c.en.curiosidade || '';
     }
+  } else {
+    f.querySelector('.c-seg').value = 20;
   }
+  marcarLinha();
 
-  f.querySelector('.c-remover').onclick = () => {
+  f.querySelector('.rem').onclick = () => {
     if ($('ed-cartas').children.length === 1) return;
     f.remove();
+    renumerar();
+  };
+  f.querySelector('.dup').onclick = () => {
+    const copia = blocoCarta(lerCarta(f));
+    f.after(copia);
+    renumerar();
+    copia.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  f.querySelector('.sobe').onclick = () => {
+    if (f.previousElementSibling) f.previousElementSibling.before(f);
+    renumerar();
+  };
+  f.querySelector('.desce').onclick = () => {
+    if (f.nextElementSibling) f.nextElementSibling.after(f);
     renumerar();
   };
   return f;
 }
 
 function renumerar() {
-  [...$('ed-cartas').children].forEach((f, i) => {
-    f.querySelector('legend').textContent = 'Pergunta ' + (i + 1);
+  const cartas = [...$('ed-cartas').children];
+  cartas.forEach((f, i) => {
+    f.querySelector('.ed-num').textContent = i + 1;
+    f.querySelector('.sobe').disabled = i === 0;
+    f.querySelector('.desce').disabled = i === cartas.length - 1;
+    f.querySelector('.rem').disabled = cartas.length === 1;
   });
+  $('ed-contagem').textContent =
+    cartas.length + (cartas.length === 1 ? ' pergunta' : ' perguntas');
 }
 
-function serializarEditor() {
-  const cartas = [...$('ed-cartas').children].map((f) => {
-    const marcada = f.querySelector('input[type="radio"]:checked');
-    const en = {
+/** Lê um bloco do editor de volta pro formato de carta. */
+function lerCarta(f) {
+  const marcada = f.querySelector('input[type="radio"]:checked');
+  return {
+    segundos: Number(f.querySelector('.c-seg').value),
+    correta: marcada ? Number(marcada.value) : -1,
+    pt: {
+      enunciado: f.querySelector('.c-enun').value,
+      opcoes: [...f.querySelectorAll('.c-op')].map((el) => el.value),
+      curiosidade: f.querySelector('.c-cur').value,
+    },
+    en: {
       enunciado: f.querySelector('.c-en-enun').value,
       opcoes: [...f.querySelectorAll('.c-en-op')].map((el) => el.value),
       curiosidade: f.querySelector('.c-en-cur').value,
-    };
-    return {
-      segundos: Number(f.querySelector('.c-seg').value),
-      correta: marcada ? Number(marcada.value) : -1,
-      pt: {
-        enunciado: f.querySelector('.c-enun').value,
-        opcoes: [...f.querySelectorAll('.c-op')].map((el) => el.value),
-        curiosidade: f.querySelector('.c-cur').value,
-      },
-      en,
-    };
-  });
+    },
+  };
+}
+
+function serializarEditor() {
   return {
     id: $('ed-titulo').dataset.id || undefined,
     titulo: $('ed-titulo').value,
     emoji: $('ed-emoji').value,
-    cartas,
+    cartas: [...$('ed-cartas').children].map(lerCarta),
   };
 }
 
 $('ed-add').onclick = () => {
-  $('ed-cartas').appendChild(blocoCarta(null));
+  const nova = blocoCarta(null);
+  $('ed-cartas').appendChild(nova);
   renumerar();
+  nova.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  nova.querySelector('.c-enun').focus();
 };
 $('ed-salvar').onclick = () => {
   $('ed-erro').textContent = '';

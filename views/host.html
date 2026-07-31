@@ -82,23 +82,89 @@
     .card-novo .mais { font-size: 2.4rem; line-height: 1; }
 
     /* ---------- editor ---------- */
-    .ed-carta { background: #fff; border: 1px solid var(--borda); border-radius: 16px;
-      margin: 16px 0; padding: 22px; box-shadow: var(--sombra); }
-    .ed-carta legend {
-      font-weight: 800; color: var(--skeelo-escuro);
-      padding: 0 .6rem; letter-spacing: .04em;
+    .ed-cabeca { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+    .ed-cabeca .campo { font-size: 1.05rem; }
+    .ed-emoji {
+      width: 74px; height: 58px; flex: none; text-align: center;
+      font-size: 1.7rem; padding: 0; cursor: pointer;
     }
-    .ed-linha { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .ed-op { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
-    .ed-op input[type="radio"] { width: 20px; height: 20px; accent-color: var(--skeelo); flex: none; }
-    .ed-op .forma { width: 1.6rem; text-align: center; flex: none; }
-    .ed-carta textarea.campo { resize: vertical; min-height: 58px; }
-    .ed-carta details { margin-top: .8rem; }
-    .ed-carta summary { cursor: pointer; color: var(--skeelo-escuro); font-weight: 600; }
-    .ed-rodape { display: flex; justify-content: space-between; margin-top: .8rem; }
-    .ed-acoes { display: flex; gap: 12px; margin: 1.4rem 0 3rem; flex-wrap: wrap; }
-    .ed-erro { color: var(--rosa); font-weight: 600; min-height: 1.4em; }
-    .campo-curto { width: 110px; }
+    .ed-rot { font-size: .82rem; font-weight: 600; color: var(--tinta2); display: block; margin-bottom: .35rem; }
+
+    .ed-carta {
+      position: relative; background: #fff; border: 1px solid var(--borda);
+      border-radius: 18px; margin: 16px 0; padding: 20px; box-shadow: var(--sombra);
+    }
+    .ed-topo { display: flex; align-items: center; gap: .7rem; margin-bottom: .9rem; }
+    .ed-num {
+      width: 30px; height: 30px; border-radius: 9px; flex: none;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--menta); color: var(--skeelo-escuro); font-weight: 700; font-size: .9rem;
+    }
+    .ed-titulo-q { font-weight: 700; font-size: 1rem; }
+    .ed-ferramentas { margin-left: auto; display: flex; gap: 6px; }
+    .ed-ferramentas button {
+      width: 32px; height: 32px; border-radius: 9px; cursor: pointer;
+      border: 1px solid var(--borda); background: #fff; color: var(--tinta2);
+      font-size: .95rem; line-height: 1; transition: background .12s ease, color .12s ease;
+    }
+    .ed-ferramentas button:hover { background: var(--menta); color: var(--skeelo-escuro); }
+    .ed-ferramentas button.rem:hover { background: #fdeaef; color: #c2445f; }
+    .ed-ferramentas button:disabled { opacity: .3; cursor: not-allowed; background: #fff; }
+
+    .c-enun { font-size: 1.05rem; font-weight: 600; min-height: 62px; }
+
+    .ed-alts { display: grid; gap: 10px; margin: 14px 0 0; }
+    @media (min-width: 860px) { .ed-alts { grid-template-columns: 1fr 1fr; } }
+    .ed-alt {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--cor); border: 2px solid transparent;
+      border-radius: 14px; padding: 8px 10px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .ed-alt[data-i="0"] { --cor: var(--op0); }
+    .ed-alt[data-i="1"] { --cor: var(--op1); }
+    .ed-alt[data-i="2"] { --cor: var(--op2); }
+    .ed-alt[data-i="3"] { --cor: var(--op3); }
+    .ed-alt .forma {
+      width: 30px; text-align: center; flex: none;
+      color: rgba(13, 40, 24, .5); font-size: 1rem;
+    }
+    .ed-alt .campo { border: 0; border-radius: 10px; padding: .6rem .75rem; }
+    .ed-alt .marcar {
+      flex: none; width: 30px; height: 30px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: rgba(255, 255, 255, .75);
+      color: transparent; font-size: .95rem; font-weight: 800;
+      border: 2px solid rgba(13, 40, 24, .18);
+      transition: background .12s ease, color .12s ease, border-color .12s ease;
+    }
+    .ed-alt .marcar:hover { border-color: var(--skeelo); color: rgba(0, 200, 83, .45); }
+    .ed-alt .marcar input { position: absolute; opacity: 0; pointer-events: none; }
+    .ed-alt.correta { border-color: var(--skeelo); box-shadow: 0 0 0 3px rgba(0, 200, 83, .18); }
+    .ed-alt.correta .marcar { background: var(--skeelo); border-color: var(--skeelo); color: #fff; }
+
+    .ed-linha { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; margin-top: 1rem; }
+    .ed-carta textarea.campo { resize: vertical; }
+    .ed-carta details { margin-top: .9rem; border-top: 1px solid var(--borda); padding-top: .8rem; }
+    .ed-carta summary {
+      cursor: pointer; color: var(--skeelo-escuro); font-weight: 600; font-size: .92rem;
+      list-style: none; display: flex; align-items: center; gap: .4rem;
+    }
+    .ed-carta summary::-webkit-details-marker { display: none; }
+    .ed-carta summary::before { content: '▸'; transition: transform .15s ease; }
+    .ed-carta details[open] summary::before { transform: rotate(90deg); }
+    .ed-carta details .ed-alt { background: #f4f8f5; }
+    .ed-en-grade { display: grid; gap: 10px; margin-top: .7rem; }
+    @media (min-width: 860px) { .ed-en-grade { grid-template-columns: 1fr 1fr; } }
+
+    .ed-acoes {
+      position: sticky; bottom: 0; z-index: 30;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      margin: 1.2rem 0 0; padding: 14px 0;
+      background: linear-gradient(transparent, var(--fundo) 30%);
+    }
+    .ed-erro { color: #c2445f; font-weight: 600; min-height: 1.4em; }
+    .campo-curto { width: 168px; }
 
     /* ---------- jogo ---------- */
     .enunciado-grande { font-size: clamp(1.4rem, 3.4vw, 2.6rem); }
@@ -218,19 +284,22 @@
     <section id="tela-editor" class="tela">
       <p class="marca">Editor</p>
       <h1 id="ed-cabecalho" style="font-size:clamp(1.6rem,4vw,2.4rem)">Novo quiz</h1>
-      <div class="cartao">
-        <div class="ed-linha">
-          <label style="flex:1;min-width:240px">Título
-            <input id="ed-titulo" class="campo" maxlength="60" placeholder="Ex.: Festas Juninas pelo mundo">
-          </label>
-          <label>Emoji
-            <input id="ed-emoji" class="campo campo-curto centro" maxlength="4" placeholder="🎯">
-          </label>
+      <div class="cartao faixa" style="--acento:var(--skeelo)">
+        <div class="ed-cabeca">
+          <div style="flex:1;min-width:240px">
+            <label class="ed-rot" for="ed-titulo">Título do quiz</label>
+            <input id="ed-titulo" class="campo" maxlength="60" placeholder="Ex.: Cultura pop dos anos 90">
+          </div>
+          <div>
+            <label class="ed-rot" for="ed-emoji">Ícone</label>
+            <input id="ed-emoji" class="campo ed-emoji" maxlength="4" placeholder="🎯">
+          </div>
         </div>
       </div>
       <div id="ed-cartas"></div>
       <div class="ed-acoes">
         <button class="botao fantasma" id="ed-add">＋ Adicionar pergunta</button>
+        <span class="discreto" id="ed-contagem"></span>
         <span style="flex:1"></span>
         <button class="botao fantasma" id="ed-cancelar">Cancelar</button>
         <button class="botao" id="ed-salvar">Salvar quiz</button>

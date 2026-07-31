@@ -70,6 +70,7 @@ let ultimaQ = -1;
 let estado = null;
 let festejei = false;
 const confete = Confete(document.getElementById('confete'));
+document.body.classList.add('festa');
 
 function mostrar(qual) {
   telas.forEach((t) => $('tela-' + t).classList.toggle('ativa', t === qual));
