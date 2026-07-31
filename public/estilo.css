@@ -57,14 +57,8 @@ body {
   align-items: center;
   gap: 1rem;
 }
-.topo .logo-skeelo {
-  color: #fff;
-  font-size: 1.15rem;
-  display: flex;
-  align-items: center;
-  gap: .45rem;
-}
-.topo .logo-skeelo b { color: var(--skeelo-claro); }
+.topo .logo-skeelo { color: #fff; }
+.topo .logo-skeelo img { filter: brightness(0) invert(1); }
 .pill {
   display: inline-flex;
   align-items: center;
@@ -105,12 +99,20 @@ p { line-height: 1.55; }
 }
 
 .logo-skeelo {
-  font-weight: 800;
-  letter-spacing: -.02em;
-  text-transform: lowercase;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
   color: var(--tinta);
 }
-.logo-skeelo b { color: var(--skeelo-escuro); }
+/* logo oficial, quando public/marca.svg (ou .png) existe */
+.logo-skeelo img { height: 26px; width: auto; display: block; }
+/* fallback tipográfico enquanto o arquivo não está lá */
+.logo-skeelo .palavra {
+  font-weight: 600;
+  font-size: 1.2rem;
+  letter-spacing: -.035em;
+  text-transform: lowercase;
+}
 
 /* ---------- cards ---------- */
 .cartao {

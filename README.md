@@ -64,6 +64,16 @@ npm run teste        # teste de fumaça (62 verificações)
 Pela raiz do site, digitando o **PIN** que está na tela do apresentador — ou escaneando o
 QR, que abre a página com o PIN já preenchido. Sem sala aberta, ninguém entra.
 
+## Logo da marca
+
+A barra do topo procura por **`public/marca.svg`**. Se o arquivo existir, ele é exibido
+(a versão da barra escura recebe `filter: brightness(0) invert(1)`, então funciona com
+logo monocromático); se não existir, aparece a palavra "skeelo" em texto.
+
+Pra colocar o oficial: suba o arquivo como `public/marca.svg` — pelo GitHub dá pra fazer
+em **Add file → Upload files**, sem precisar de terminal. PNG também serve, é só ajustar
+o `src` nas duas telas (`views/host.html` e `public/index.html`).
+
 ## Deploy no Railway
 
 `railway.json` já fixa `npm start` e o healthcheck em `/api/saude`. Gere o domínio em
