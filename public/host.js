@@ -68,6 +68,9 @@ let ultimoEstado = null;
 let festaMontada = false;
 let timersFesta = [];
 let radioSeq = 0;
+let coresEditor = [];   // preenchido ao abrir o editor (PALETAS é declarado adiante)
+let podeTraduzir = false;
+let traduzindo = null;
 const confete = Confete($('confete'));
 
 function mostrar(qual) {
@@ -104,6 +107,12 @@ function conectar() {
     if (m.t === 'estado') pintar(m);
     else if (m.t === 'quiz' && m.quiz) abrirEditor(m.quiz);
     else if (m.t === 'salvo') fecharEditor();
+    else if (m.t === 'traduzido') receberTraducao(m.idioma, m.cartas);
+    else if (m.t === 'erro' && m.erro === 'sem-traducao') {
+      destravarTraducao('Tradução automática desligada: falta ANTHROPIC_API_KEY no servidor.');
+    } else if (m.t === 'erro' && m.erro === 'traducao') {
+      destravarTraducao('Não deu pra traduzir: ' + (m.detalhe || 'erro desconhecido'));
+    }
     else if (m.t === 'erro' && m.erro === 'invalido') {
       $('ed-erro').textContent = {
         titulo: 'Dê um título ao quiz.',
@@ -131,8 +140,7 @@ function pintar(e) {
   if (visao === 'editor') return;          // não sai do editor no meio da digitação
 
   document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'en';
-  $('bt-pt').classList.toggle('on', idioma === 'pt');
-  $('bt-en').classList.toggle('on', idioma === 'en');
+  ['pt', 'en', 'es'].forEach((v) => $('bt-' + v).classList.toggle('on', idioma === v));
   $('h-aponte').textContent = t.aponte;
   $('h-parcial').textContent = t.parcial;
   $('h-lideres').textContent = t.lideres;
@@ -144,6 +152,8 @@ function pintar(e) {
   principal.disabled = false;
 
   if (e.pin !== qrDoPin) carregarEntrada(e.pin);
+  podeTraduzir = !!e.podeTraduzir;
+  aplicarCores(e.cores);
   document.body.classList.toggle('festa', e.fase !== 'menu');
 
   if (e.fase === 'menu') {
@@ -266,6 +276,11 @@ function pintarMenu(e) {
 function abrirEditor(quiz) {
   visao = 'editor';
   $('ed-erro').textContent = '';
+  $('ed-status').textContent = '';
+  coresEditor = (quiz && Array.isArray(quiz.cores) && quiz.cores.length === 4)
+    ? quiz.cores.slice()
+    : PALETAS[0].cores.slice();
+  montarPaleta();
   $('ed-cabecalho').textContent = quiz ? 'Editar quiz' : 'Novo quiz';
   $('ed-titulo').value = quiz ? quiz.titulo : '';
   $('ed-emoji').value = quiz ? quiz.emoji || '' : '';
@@ -277,6 +292,50 @@ function abrirEditor(quiz) {
   window.scrollTo(0, 0);
 }
 
+function montarPaleta() {
+  const presets = $('ed-presets');
+  presets.innerHTML = '';
+  PALETAS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'preset';
+    b.title = p.nome;
+    b.innerHTML = p.cores.map((c) => `<i style="background:${c}"></i>`).join('') +
+                  `<span>${p.nome}</span>`;
+    b.onclick = () => {
+      coresEditor = p.cores.slice();
+      montarPaleta();
+    };
+    presets.appendChild(b);
+  });
+
+  const livres = $('ed-cores');
+  livres.innerHTML = '';
+  coresEditor.forEach((cor, i) => {
+    const cx = document.createElement('label');
+    cx.className = 'cor-livre';
+    cx.innerHTML = `<span class="forma">${FORMAS[i]}</span><input type="color" value="${cor}">`;
+    cx.querySelector('input').oninput = (ev) => {
+      coresEditor[i] = ev.target.value;
+      cx.style.setProperty('--previa', ev.target.value);
+      $('ed-previa').children[i].style.background = ev.target.value;
+    };
+    cx.style.setProperty('--previa', cor);
+    livres.appendChild(cx);
+  });
+
+  const previa = $('ed-previa');
+  previa.innerHTML = '';
+  coresEditor.forEach((cor, i) => {
+    const d = document.createElement('div');
+    d.className = 'previa-alt';
+    d.style.background = cor;
+    d.style.color = contraste(cor);
+    d.textContent = `${FORMAS[i]}  Alternativa ${i + 1}`;
+    previa.appendChild(d);
+  });
+}
+
 function fecharEditor() {
   visao = null;
   if (ultimoEstado) pintar(ultimoEstado);
@@ -284,20 +343,66 @@ function fecharEditor() {
 
 const TEMPOS = [10, 15, 20, 30, 45, 60, 90, 120];
 
+const IDIOMAS_EXTRA = [
+  { cod: 'en', rotulo: 'English', dica: 'Question in English', op: 'Option', cur: 'Fun fact (optional)' },
+  { cod: 'es', rotulo: 'Español', dica: 'Pregunta en español', op: 'Opción', cur: 'Dato curioso (opcional)' },
+];
+
+const PALETAS = [
+  { nome: 'Pastel',   cores: ['#fbcfdd', '#c7e2fb', '#fde6a8', '#bdf0d4'] },
+  { nome: 'Vibrante', cores: ['#e8455f', '#2196f3', '#f5a623', '#00b871'] },
+  { nome: 'Skeelo',   cores: ['#00c853', '#0c3221', '#8ee9b6', '#146c43'] },
+  { nome: 'Doce',     cores: ['#ffb5a7', '#b8c0ff', '#ffd6a5', '#caffbf'] },
+  { nome: 'Noturna',  cores: ['#5f4b8b', '#1f6f8b', '#c06014', '#2d6a4f'] },
+];
+
+/** Texto escuro ou claro conforme o fundo, pra alternativa nunca ficar ilegível. */
+function contraste(hex) {
+  const n = parseInt(String(hex).slice(1), 16);
+  if (Number.isNaN(n)) return '#0d2818';
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  const luz = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luz > 0.42 ? '#0d2818' : '#ffffff';
+}
+
+/** Aplica a paleta do quiz nas variáveis que as alternativas usam. */
+function aplicarCores(cores) {
+  const lista = Array.isArray(cores) && cores.length === 4 ? cores : PALETAS[0].cores;
+  const raiz = document.documentElement;
+  lista.forEach((c, i) => {
+    raiz.style.setProperty(`--op${i}`, c);
+    raiz.style.setProperty(`--tinta-op${i}`, contraste(c));
+  });
+}
+
 function blocoCarta(c) {
   const grupo = 'certa-' + radioSeq++;
   const f = document.createElement('fieldset');
   f.className = 'ed-carta';
 
-  const alt = (i, en) =>
+  const alt = (i, lang) =>
     `<div class="ed-alt" data-i="${i}">` +
       `<span class="forma">${FORMAS[i]}</span>` +
-      `<input class="campo ${en ? 'c-en-op' : 'c-op'}" maxlength="160" ` +
-        `placeholder="${en ? 'Option' : 'Alternativa'} ${i + 1}">` +
-      (en ? '' :
+      `<input class="campo ${lang ? 'c-' + lang + '-op' : 'c-op'}" maxlength="160" ` +
+        `placeholder="${lang ? IDIOMAS_EXTRA.find((x) => x.cod === lang).op : 'Alternativa'} ${i + 1}">` +
+      (lang ? '' :
         `<label class="marcar" title="Marcar como correta">` +
           `<input type="radio" name="${grupo}" value="${i}">✓</label>`) +
     '</div>';
+
+  const secaoIdioma = (L) =>
+    `<details data-lang="${L.cod}"><summary>${L.rotulo} (opcional)` +
+      `<button type="button" class="bt-traduzir" data-lang="${L.cod}">✨ Traduzir</button>` +
+    '</summary>' +
+      `<textarea class="campo c-${L.cod}-enun" maxlength="300" placeholder="${L.dica}" ` +
+        'style="margin-top:.7rem"></textarea>' +
+      `<div class="ed-en-grade">${alt(0, L.cod)}${alt(1, L.cod)}${alt(2, L.cod)}${alt(3, L.cod)}</div>` +
+      `<textarea class="campo c-${L.cod}-cur" maxlength="500" placeholder="${L.cur}" ` +
+        'style="margin-top:.7rem"></textarea>' +
+    '</details>';
 
   f.innerHTML =
     '<div class="ed-topo">' +
@@ -322,15 +427,8 @@ function blocoCarta(c) {
         '<textarea class="campo c-cur" maxlength="500" ' +
           'placeholder="Aparece na tela grande quando a resposta é revelada"></textarea></div>' +
     '</div>' +
-    '<details><summary>Versão em inglês (opcional)</summary>' +
-      '<textarea class="campo c-en-enun" maxlength="300" placeholder="Question in English" ' +
-        'style="margin-top:.7rem"></textarea>' +
-      `<div class="ed-en-grade">${alt(0, true)}${alt(1, true)}${alt(2, true)}${alt(3, true)}</div>` +
-      '<textarea class="campo c-en-cur" maxlength="500" placeholder="Fun fact (optional)" ' +
-        'style="margin-top:.7rem"></textarea>' +
-    '</details>';
+    IDIOMAS_EXTRA.map(secaoIdioma).join('');
 
-  /* marcar a correta pinta a linha inteira */
   const marcarLinha = () => {
     f.querySelectorAll('.ed-alts .ed-alt').forEach((linha) => {
       linha.classList.toggle('correta', linha.querySelector('input[type="radio"]').checked);
@@ -343,21 +441,29 @@ function blocoCarta(c) {
     f.querySelectorAll('.c-op').forEach((el, i) => { el.value = c.pt.opcoes[i] || ''; });
     f.querySelectorAll(`input[name="${grupo}"]`)[c.correta].checked = true;
     if (!TEMPOS.includes(c.segundos)) {
-      const extra = new Option(c.segundos + ' segundos', c.segundos);
-      f.querySelector('.c-seg').add(extra);
+      f.querySelector('.c-seg').add(new Option(c.segundos + ' segundos', c.segundos));
     }
     f.querySelector('.c-seg').value = c.segundos;
     f.querySelector('.c-cur').value = c.pt.curiosidade || '';
-    if (c.en) {
-      f.querySelector('details').open = true;
-      f.querySelector('.c-en-enun').value = c.en.enunciado;
-      f.querySelectorAll('.c-en-op').forEach((el, i) => { el.value = c.en.opcoes[i] || ''; });
-      f.querySelector('.c-en-cur').value = c.en.curiosidade || '';
-    }
+    IDIOMAS_EXTRA.forEach((L) => {
+      const t = c[L.cod];
+      if (!t) return;
+      f.querySelector(`details[data-lang="${L.cod}"]`).open = true;
+      f.querySelector(`.c-${L.cod}-enun`).value = t.enunciado;
+      f.querySelectorAll(`.c-${L.cod}-op`).forEach((el, i) => { el.value = t.opcoes[i] || ''; });
+      f.querySelector(`.c-${L.cod}-cur`).value = t.curiosidade || '';
+    });
   } else {
     f.querySelector('.c-seg').value = 20;
   }
   marcarLinha();
+
+  f.querySelectorAll('.bt-traduzir').forEach((bt) => {
+    bt.onclick = (ev) => {
+      ev.preventDefault();
+      traduzirPerguntas(bt.dataset.lang, f);
+    };
+  });
 
   f.querySelector('.rem').onclick = () => {
     if ($('ed-cartas').children.length === 1) return;
@@ -396,7 +502,7 @@ function renumerar() {
 /** Lê um bloco do editor de volta pro formato de carta. */
 function lerCarta(f) {
   const marcada = f.querySelector('input[type="radio"]:checked');
-  return {
+  const carta = {
     segundos: Number(f.querySelector('.c-seg').value),
     correta: marcada ? Number(marcada.value) : -1,
     pt: {
@@ -404,12 +510,57 @@ function lerCarta(f) {
       opcoes: [...f.querySelectorAll('.c-op')].map((el) => el.value),
       curiosidade: f.querySelector('.c-cur').value,
     },
-    en: {
-      enunciado: f.querySelector('.c-en-enun').value,
-      opcoes: [...f.querySelectorAll('.c-en-op')].map((el) => el.value),
-      curiosidade: f.querySelector('.c-en-cur').value,
-    },
   };
+  IDIOMAS_EXTRA.forEach((L) => {
+    carta[L.cod] = {
+      enunciado: f.querySelector(`.c-${L.cod}-enun`).value,
+      opcoes: [...f.querySelectorAll(`.c-${L.cod}-op`)].map((el) => el.value),
+      curiosidade: f.querySelector(`.c-${L.cod}-cur`).value,
+    };
+  });
+  return carta;
+}
+
+/** Preenche o idioma pedido com tradução automática (uma pergunta ou todas). */
+function traduzirPerguntas(idioma, apenas) {
+  if (!podeTraduzir) {
+    $('ed-erro').textContent =
+      'Tradução automática desligada: falta a variável ANTHROPIC_API_KEY no servidor.';
+    return;
+  }
+  const blocos = apenas ? [apenas] : [...$('ed-cartas').children];
+  const cartas = blocos.map(lerCarta);
+  if (cartas.some((c) => !c.pt.enunciado.trim() || c.pt.opcoes.some((o) => !o.trim()))) {
+    $('ed-erro').textContent = 'Escreva a pergunta e as 4 alternativas em português antes de traduzir.';
+    return;
+  }
+  $('ed-erro').textContent = '';
+  traduzindo = { idioma, blocos };
+  document.querySelectorAll('.bt-traduzir, #ed-traduzir-tudo').forEach((b) => { b.disabled = true; });
+  $('ed-status').textContent = 'Traduzindo…';
+  enviar({ t: 'traduzir', idioma, cartas });
+}
+
+function destravarTraducao(msg) {
+  traduzindo = null;
+  document.querySelectorAll('.bt-traduzir, #ed-traduzir-tudo').forEach((b) => { b.disabled = false; });
+  $('ed-status').textContent = '';
+  $('ed-erro').textContent = msg;
+}
+
+function receberTraducao(idioma, cartas) {
+  const alvo = traduzindo && traduzindo.idioma === idioma ? traduzindo.blocos : [];
+  alvo.forEach((f, i) => {
+    const t = cartas[i];
+    if (!t) return;
+    f.querySelector(`details[data-lang="${idioma}"]`).open = true;
+    f.querySelector(`.c-${idioma}-enun`).value = t.enunciado || '';
+    f.querySelectorAll(`.c-${idioma}-op`).forEach((el, j) => { el.value = t.opcoes[j] || ''; });
+    f.querySelector(`.c-${idioma}-cur`).value = t.curiosidade || '';
+  });
+  traduzindo = null;
+  document.querySelectorAll('.bt-traduzir, #ed-traduzir-tudo').forEach((b) => { b.disabled = false; });
+  $('ed-status').textContent = 'Tradução pronta — revise antes de salvar.';
 }
 
 function serializarEditor() {
@@ -417,6 +568,7 @@ function serializarEditor() {
     id: $('ed-titulo').dataset.id || undefined,
     titulo: $('ed-titulo').value,
     emoji: $('ed-emoji').value,
+    cores: coresEditor,
     cartas: [...$('ed-cartas').children].map(lerCarta),
   };
 }
@@ -433,6 +585,10 @@ $('ed-salvar').onclick = () => {
   enviar({ t: 'salvarQuiz', quiz: serializarEditor() });
 };
 $('ed-cancelar').onclick = fecharEditor;
+$('ed-traduzir-tudo').onclick = () => {
+  const idioma = $('ed-idioma-alvo').value;
+  traduzirPerguntas(idioma, null);
+};
 
 /* ---------- listas e pódio ---------- */
 
@@ -525,8 +681,7 @@ function montarOpcoes(e) {
 
 /* ---------- barra ---------- */
 
-$('bt-pt').onclick = () => enviar({ t: 'idioma', v: 'pt' });
-$('bt-en').onclick = () => enviar({ t: 'idioma', v: 'en' });
+['pt', 'en', 'es'].forEach((v) => { $('bt-' + v).onclick = () => enviar({ t: 'idioma', v }); });
 $('bt-menu').onclick = () => {
   if (confirm(T[idioma].confirmaMenu)) enviar({ t: 'menu' });
 };

@@ -26,6 +26,10 @@
   --op1: #c7e2fb;
   --op2: #fde6a8;
   --op3: #bdf0d4;
+  --tinta-op0: #0d2818;
+  --tinta-op1: #0d2818;
+  --tinta-op2: #0d2818;
+  --tinta-op3: #0d2818;
 
   --sombra:  0 4px 16px rgba(12, 50, 33, .07);
   --sombra2: 0 14px 34px rgba(12, 50, 33, .13);
@@ -270,10 +274,10 @@ p { line-height: 1.55; }
   color: rgba(13, 40, 24, .55);
   flex: none;
 }
-.opcao[data-i="0"] { --cor: var(--op0); }
-.opcao[data-i="1"] { --cor: var(--op1); }
-.opcao[data-i="2"] { --cor: var(--op2); }
-.opcao[data-i="3"] { --cor: var(--op3); }
+.opcao[data-i="0"] { --cor: var(--op0); --sobre: var(--tinta-op0); }
+.opcao[data-i="1"] { --cor: var(--op1); --sobre: var(--tinta-op1); }
+.opcao[data-i="2"] { --cor: var(--op2); --sobre: var(--tinta-op2); }
+.opcao[data-i="3"] { --cor: var(--op3); --sobre: var(--tinta-op3); }
 .opcao:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: var(--sombra2);
@@ -367,4 +371,68 @@ p { line-height: 1.55; }
 body.festa .glitter i { --o: 1; }
 @media (prefers-reduced-motion: reduce) {
   .glitter i { animation: none; opacity: .5; }
+}
+
+
+/* ---------- responsividade ---------- */
+
+/* barra do topo em telas estreitas */
+@media (max-width: 640px) {
+  .topo { padding: 10px 14px; }
+  .topo-in { gap: .6rem; }
+  .topo .logo-skeelo img { height: 22px; }
+  .topo .logo-skeelo .palavra { font-size: 1.1rem; }
+  .topo-centro { margin-left: auto; }
+  .pill { padding: .4rem .7rem; font-size: .85rem; }
+  .topo-dir { display: none; }
+  .envelope { padding: 16px 14px 22px; }
+  .cartao { border-radius: 18px; }
+  h1 { font-size: clamp(1.5rem, 7vw, 2rem); }
+}
+
+/* celular: alternativas ocupam a tela, alvo de toque generoso */
+@media (max-width: 640px) {
+  .opcoes { gap: 12px; }
+  .opcao {
+    min-height: 76px;
+    padding: .9rem 1rem;
+    font-size: 1.02rem;
+    border-radius: 16px;
+  }
+  .opcao .forma { width: 34px; height: 34px; font-size: .95rem; border-radius: 10px; }
+  .botao { padding: .8rem 1.2rem; }
+}
+
+/* telas muito baixas em paisagem (celular deitado) */
+@media (max-height: 520px) and (orientation: landscape) {
+  .opcao { min-height: 60px; padding: .6rem .9rem; }
+  .barra-tempo { margin: .6rem 0 .8rem; }
+}
+
+/* aparelhos com entalhe: respeita a área segura */
+@supports (padding: max(0px)) {
+  .envelope {
+    padding-left: max(clamp(18px, 3vw, 34px), env(safe-area-inset-left));
+    padding-right: max(clamp(18px, 3vw, 34px), env(safe-area-inset-right));
+    padding-bottom: max(clamp(18px, 3vw, 34px), env(safe-area-inset-bottom));
+  }
+  .topo { padding-top: max(14px, env(safe-area-inset-top)); }
+}
+
+/* toque: sem hover fantasma em tela sensível */
+@media (hover: none) {
+  .opcao:hover:not(:disabled) { transform: none; box-shadow: var(--sombra); }
+  .botao:hover:not(:disabled) { transform: none; }
+  .card-quiz:hover { transform: none; }
+}
+
+/* telas grandes: aproveita a largura sem esticar demais o texto */
+@media (min-width: 1600px) {
+  .envelope { max-width: 1440px; }
+}
+
+/* impressão / captura: sem brilho nem animação */
+@media print {
+  .glitter, #confete, .barra-controle { display: none !important; }
+  body { background: #fff; }
 }

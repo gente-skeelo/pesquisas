@@ -61,6 +61,7 @@ export async function salvar(bruto) {
     id: bruto.id || randomUUID(),
     titulo: bruto.titulo,
     emoji: bruto.emoji || '🎯',
+    cores: bruto.cores,
     cartas: bruto.cartas,
     atualizado: new Date().toISOString(),
   };

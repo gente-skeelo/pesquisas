@@ -18,6 +18,7 @@ import QRCode from 'qrcode';
 import { WebSocketServer } from 'ws';
 
 import * as armazem from './armazem.js';
+import * as traducao from './traducao.js';
 
 const RAIZ = dirname(fileURLToPath(import.meta.url));
 
@@ -32,6 +33,10 @@ const BONUS_SERIE_MAX = 500;  // teto do bonus de sequencia
 
 const novoPin = () => String(Math.floor(100000 + Math.random() * 900000));
 
+const IDIOMAS = ['pt', 'en', 'es'];
+const CORES_PADRAO = ['#fbcfdd', '#c7e2fb', '#fde6a8', '#bdf0d4'];
+const ehHex = (c) => /^#[0-9a-fA-F]{6}$/.test(String(c || ''));
+
 /* ---------- estado da partida ---------- */
 
 const jogo = {
@@ -42,6 +47,7 @@ const jogo = {
   quizId: null,
   quizTitulo: '',
   quizEmoji: '',
+  cores: CORES_PADRAO,
   q: -1,
   abertaEm: 0,
   relogio: null,
@@ -76,6 +82,7 @@ function base() {
     idioma: jogo.idioma,
     quiz: jogo.quizTitulo,
     emoji: jogo.quizEmoji,
+    cores: jogo.cores,
     q: jogo.q,
     total: jogo.baralho.length,
     enunciado: t ? t.enunciado : '',
@@ -95,6 +102,7 @@ function estadoApresentador() {
   return {
     ...base(),
     pin: jogo.pin,
+    podeTraduzir: traducao.traducaoDisponivel(),
     quizzes: armazem.listar(),
     jogadores: [...jogo.jogadores.values()].map((j) => ({ nome: j.nome, conectado: j.conectado })),
     responderam: dadas.size,
@@ -164,21 +172,32 @@ function validarQuiz(bruto) {
       pt: { enunciado, opcoes, curiosidade: String(pt.curiosidade || '').trim().slice(0, 500) },
     };
 
-    const en = (c && c.en) || {};
-    const enEnunciado = String(en.enunciado || '').trim().slice(0, 300);
-    const enOpcoes = (Array.isArray(en.opcoes) ? en.opcoes : [])
-      .map((o) => String(o || '').trim().slice(0, 160));
-    if (enEnunciado && enOpcoes.length === 4 && enOpcoes.every(Boolean)) {
-      nova.en = { enunciado: enEnunciado, opcoes: enOpcoes, curiosidade: String(en.curiosidade || '').trim().slice(0, 500) };
+    for (const lang of ['en', 'es']) {
+      const t = (c && c[lang]) || {};
+      const enun = String(t.enunciado || '').trim().slice(0, 300);
+      const ops = (Array.isArray(t.opcoes) ? t.opcoes : [])
+        .map((o) => String(o || '').trim().slice(0, 160));
+      if (enun && ops.length === 4 && ops.every(Boolean)) {
+        nova[lang] = {
+          enunciado: enun,
+          opcoes: ops,
+          curiosidade: String(t.curiosidade || '').trim().slice(0, 500),
+        };
+      }
     }
     cartas.push(nova);
   }
+
+  const cores = Array.isArray(bruto.cores) && bruto.cores.length === 4 && bruto.cores.every(ehHex)
+    ? bruto.cores.map((c) => c.toLowerCase())
+    : CORES_PADRAO;
 
   return {
     quiz: {
       id: typeof bruto.id === 'string' && bruto.id ? bruto.id : undefined,
       titulo,
       emoji: String(bruto.emoji || '').trim().slice(0, 4) || '🎯',
+      cores,
       cartas,
     },
   };
@@ -194,6 +213,7 @@ function abrirQuiz(id) {
   jogo.quizId = quiz.id;
   jogo.quizTitulo = quiz.titulo;
   jogo.quizEmoji = quiz.emoji || '🎯';
+  jogo.cores = Array.isArray(quiz.cores) && quiz.cores.length === 4 ? quiz.cores : CORES_PADRAO;
   jogo.fase = 'lobby';
   jogo.pin = novoPin();
   jogo.q = -1;
@@ -215,6 +235,7 @@ function irMenu() {
   jogo.quizId = null;
   jogo.quizTitulo = '';
   jogo.quizEmoji = '';
+  jogo.cores = CORES_PADRAO;
   jogo.q = -1;
   jogo.respostas.clear();
   for (const j of jogo.jogadores.values()) {
@@ -367,6 +388,7 @@ app.get('/api/saude', (req, res) => {
     pin: jogo.pin,
     jogadores: jogo.jogadores.size,
     quizzes: armazem.listar().length,
+    traducao: traducao.traducaoDisponivel(),
   });
 });
 
@@ -406,7 +428,7 @@ wss.on('connection', (ws) => {
       else if (m.t === 'encerrar') encerrar();
       else if (m.t === 'reiniciar') reiniciar();
       else if (m.t === 'remover') removerJogador(m.nome);
-      else if (m.t === 'idioma' && (m.v === 'pt' || m.v === 'en')) {
+      else if (m.t === 'idioma' && IDIOMAS.includes(m.v)) {
         jogo.idioma = m.v;
         transmitir();
       } else if (m.t === 'pegarQuiz') {
@@ -417,6 +439,18 @@ wss.on('connection', (ws) => {
         const salvo = await armazem.salvar(v.quiz);
         ws.send(JSON.stringify({ t: 'salvo', id: salvo.id }));
         transmitir();
+      } else if (m.t === 'traduzir') {
+        if (!traducao.traducaoDisponivel()) {
+          return ws.send(JSON.stringify({ t: 'erro', erro: 'sem-traducao' }));
+        }
+        const v = validarQuiz({ titulo: 'rascunho', cartas: m.cartas });
+        if (v.erro) return ws.send(JSON.stringify({ t: 'erro', erro: 'invalido', campo: v.erro }));
+        try {
+          const cartas = await traducao.traduzir(v.quiz.cartas, m.idioma);
+          ws.send(JSON.stringify({ t: 'traduzido', idioma: m.idioma, cartas }));
+        } catch (err) {
+          ws.send(JSON.stringify({ t: 'erro', erro: 'traducao', detalhe: err.message }));
+        }
       } else if (m.t === 'duplicarQuiz') {
         const orig = armazem.pegar(m.id);
         if (orig) {

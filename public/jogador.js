@@ -57,9 +57,56 @@ const T = {
     caiu: 'Connection dropped. Reconnecting…',
     rodape: 'Quiz do Skee · skeelo',
   },
+  es: {
+    titulo: 'Quiz do Skee',
+    sub: 'Escribe el PIN de la sala y tu nombre.',
+    rotPin: 'PIN de la sala',
+    rotNome: 'Tu nombre',
+    entrar: 'Entrar',
+    ola: (n) => `¡Listo, ${n}!`,
+    escolhendo: 'El presentador está eligiendo el quiz…',
+    espera: 'Espera a que el presentador empiece.',
+    naSala: (n) => `${n} ${n === 1 ? 'persona' : 'personas'} en la sala`,
+    pergunta: (i, t) => `Pregunta ${i} de ${t}`,
+    respondeu: 'Respuesta enviada. Espera.',
+    acertou: '¡Correcto!',
+    errou: 'Esta vez no.',
+    passou: 'No respondiste.',
+    serie: (n) => `🔥 ${n} aciertos seguidos`,
+    posicao: (p, n) => `${p}º lugar de ${n}`,
+    total: (p) => `${p} puntos en total`,
+    fim: '¡Fin del juego!',
+    resumo: (p, pos) => `Hiciste ${p} puntos y quedaste en ${pos}º.`,
+    erroNome: 'Escribe un nombre.',
+    erroPin: 'PIN incorrecto. Míralo en la pantalla del presentador.',
+    erroSemSala: 'No hay ninguna sala abierta ahora.',
+    erroRepetido: 'Ese nombre ya está en la sala. Elige otro.',
+    caiu: 'Se cayó la conexión. Reconectando…',
+    rodape: 'Quiz do Skee · skeelo',
+  },
 };
 
 const $ = (id) => document.getElementById(id);
+
+/** Texto escuro ou claro conforme o fundo da alternativa. */
+function contraste(hex) {
+  const n = parseInt(String(hex).slice(1), 16);
+  if (Number.isNaN(n)) return '#0d2818';
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.42 ? '#0d2818' : '#ffffff';
+}
+
+function aplicarCores(cores) {
+  if (!Array.isArray(cores) || cores.length !== 4) return;
+  const raiz = document.documentElement;
+  cores.forEach((c, i) => {
+    raiz.style.setProperty(`--op${i}`, c);
+    raiz.style.setProperty(`--tinta-op${i}`, contraste(c));
+  });
+}
 const telas = ['entrar', 'espera', 'pergunta', 'feedback', 'fim'];
 
 let ws = null;
@@ -131,7 +178,8 @@ function pintar(e) {
   idioma = e.idioma;
   const t = T[idioma];
 
-  document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'en';
+  document.documentElement.lang = { pt: 'pt-BR', en: 'en', es: 'es' }[idioma] || 'pt-BR';
+  aplicarCores(e.cores);
   $('tit-entrar').textContent = e.quiz ? `${e.emoji || ''} ${e.quiz}`.trim() : 'Quiz do Skee';
   $('sub-entrar').textContent = t.sub;
   $('rot-pin').textContent = t.rotPin;

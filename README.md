@@ -24,13 +24,15 @@ No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
 
 1. **Central de quizzes** — cards com os quizzes salvos: ▶ Apresentar, Editar, Duplicar,
    ✕ Excluir, ou ＋ Novo quiz.
-2. **Editor** — título, emoji e perguntas: enunciado, 4 alternativas (bolinha marca a
-   correta), tempo (5–120 s), curiosidade opcional e tradução EN opcional (sem tradução,
-   a pergunta cai no PT quando o idioma do jogo é EN).
+2. **Editor** — título, emoji, **paleta das alternativas** (5 presets ou 4 cores livres,
+   com prévia e cor de texto calculada automaticamente pelo contraste) e as perguntas:
+   enunciado, 4 alternativas (✓ marca a correta), tempo, curiosidade opcional e versões
+   em **inglês e espanhol** — manuais ou por **tradução automática**. Sem tradução, a
+   pergunta cai no português.
 3. **Lobby** — **PIN de 6 dígitos** em destaque + QR code (que já leva o PIN embutido) e
    quem já chegou (clique num nome pra remover a pessoa). Cada partida gera um PIN novo.
 4. **Partida** — botão principal (ou barra de espaço) conduz: Revelar → Placar → Próxima.
-   Seletor PT/EN ao vivo no canto.
+   Seletor PT/EN/ES ao vivo no canto.
 5. **Fim** — pódio animado (3º, 2º, 1º com coroa e confete), "Jogar de novo" repete o
    mesmo quiz com a sala mantida; "Menu" volta pra central.
 
@@ -46,7 +48,7 @@ respondem.
 ```bash
 npm install
 npm start            # http://localhost:3000 · /host?k=arraia
-npm run teste        # teste de fumaça (62 verificações)
+npm run teste        # teste de fumaça (72 verificações)
 ```
 
 ## Variáveis de ambiente
@@ -58,11 +60,27 @@ npm run teste        # teste de fumaça (62 verificações)
 | `DATABASE_URL` | Postgres pra biblioteca sobreviver a deploy (no Railway: Variables → Add Reference → Postgres) |
 | `URL_PUBLICA` | força a URL do QR code atrás de domínio próprio (opcional) |
 | `DADOS_DIR` | pasta do fallback em arquivo (padrão `./dados`) |
+| `ANTHROPIC_API_KEY` | liga a tradução automática no editor (opcional; sem ela o botão só avisa) |
 
 ## Como os jogadores entram
 
 Pela raiz do site, digitando o **PIN** que está na tela do apresentador — ou escaneando o
 QR, que abre a página com o PIN já preenchido. Sem sala aberta, ninguém entra.
+
+## Tradução automática
+
+Com `ANTHROPIC_API_KEY` no ambiente, o editor ganha botões de tradução — um por pergunta
+e um para o quiz inteiro. O servidor manda as perguntas em português para a API da
+Anthropic (`claude-opus-5`, saída estruturada por JSON Schema) e devolve as alternativas
+**na mesma ordem**, para o índice do gabarito continuar valendo. Sem a chave, nada quebra:
+o botão avisa que o recurso está desligado e a tradução manual segue disponível.
+
+## Responsividade
+
+Testado em três larguras (1440 px, 800 px e 390 px). A tela do apresentador encolhe
+pergunta, relógio e blocos juntos; o celular ganha alvos de toque maiores, respeita a área
+segura de aparelhos com entalhe e não tem hover fantasma. Nenhuma das telas rola na
+horizontal.
 
 ## Logo da marca
 

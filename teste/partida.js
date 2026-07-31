@@ -64,6 +64,7 @@ function cliente() {
 const QUIZ_TESTE = {
   titulo: 'Teste do Skee',
   emoji: '🧪',
+  cores: ['#ff0000', '#00ff00', '#0000ff', '#ffff00'],
   cartas: [
     {
       segundos: 20,
@@ -75,6 +76,7 @@ const QUIZ_TESTE = {
       correta: 1,
       pt: { enunciado: 'Segunda pergunta?', opcoes: ['a', 'b', 'c', 'd'] },
       en: { enunciado: 'June test question two?', opcoes: ['a', 'b', 'c', 'd'] },
+      es: { enunciado: '¿Segunda pregunta?', opcoes: ['a', 'b', 'c', 'd'] },
     },
   ],
 };
@@ -88,6 +90,7 @@ const servidor = spawn(process.execPath, ['server.js'], {
     CHAVE_HOST: CHAVE,
     DADOS_DIR: join(tmpdir(), 'quiz-teste-' + Date.now()),   // biblioteca zerada por rodada
     DATABASE_URL: '',
+    ANTHROPIC_API_KEY: '',
   },
   stdio: ['ignore', 'pipe', 'inherit'],
 });
@@ -137,6 +140,23 @@ try {
   await host.ate((c) => c.quizCheio, 'quiz completo pra edição');
   conferir('pegarQuiz devolve as cartas', host.quizCheio.cartas.length === 2);
   conferir('EN opcional preservado', !!host.quizCheio.cartas[1].en && !host.quizCheio.cartas[0].en);
+  conferir('ES opcional preservado', !!host.quizCheio.cartas[1].es && !host.quizCheio.cartas[0].es);
+  conferir('paleta personalizada preservada',
+           JSON.stringify(host.quizCheio.cores) === JSON.stringify(['#ff0000', '#00ff00', '#0000ff', '#ffff00']),
+           JSON.stringify(host.quizCheio.cores));
+
+  host.envia({ t: 'salvarQuiz', quiz: { ...QUIZ_TESTE, titulo: 'Cor ruim', cores: ['nao-e-cor', '#fff', 'x', 'y'] } });
+  await host.ate((c) => c.estado.quizzes.some((q) => q.titulo === 'Cor ruim'), 'quiz com cor inválida');
+  const idCorRuim = host.salvoId;
+  host.quizCheio = null;
+  host.envia({ t: 'pegarQuiz', id: idCorRuim });
+  await host.ate((c) => c.quizCheio, 'quiz de cor inválida');
+  conferir('cor inválida cai no padrão pastel', host.quizCheio.cores[0] === '#fbcfdd', host.quizCheio.cores[0]);
+  host.envia({ t: 'excluirQuiz', id: idCorRuim });
+  await host.ate((c) => c.estado.quizzes.every((q) => q.id !== idCorRuim), 'limpeza');
+  host.quizCheio = null;
+  host.envia({ t: 'pegarQuiz', id: idTeste });
+  await host.ate((c) => c.quizCheio, 'quiz de volta');
 
   host.envia({ t: 'salvarQuiz', quiz: { ...host.quizCheio, titulo: 'Teste do Skee v2' } });
   await host.ate((c) => c.estado.quizzes.some((q) => q.titulo === 'Teste do Skee v2'), 'edição salva');
@@ -154,6 +174,9 @@ try {
   host.envia({ t: 'abrirQuiz', id: idTeste });
   await host.ate((c) => c.estado.fase === 'lobby', 'lobby');
   conferir('abre o quiz escolhido', host.estado.quiz === 'Teste do Skee v2');
+  conferir('paleta do quiz vai pro estado',
+           JSON.stringify(host.estado.cores) === JSON.stringify(['#ff0000', '#00ff00', '#0000ff', '#ffff00']),
+           JSON.stringify(host.estado.cores));
   PIN = host.estado.pin;
   conferir('PIN de 6 dígitos gerado', /^\d{6}$/.test(PIN), PIN);
 
@@ -249,6 +272,13 @@ try {
   conferir('pergunta 2 vem em inglês', host.estado.enunciado === 'June test question two?',
            host.estado.enunciado);
 
+  host.envia({ t: 'idioma', v: 'es' });
+  await host.ate((cl) => cl.estado.idioma === 'es', 'espanhol');
+  conferir('pergunta 2 vem em espanhol', host.estado.enunciado === '¿Segunda pregunta?',
+           host.estado.enunciado);
+  await jogadores[0].ate((cl) => cl.estado.idioma === 'es', 'espanhol no jogador');
+  conferir('espanhol chega no jogador', jogadores[0].estado.idioma === 'es');
+
   jogadores[0].envia({ t: 'responder', q: 1, opcao: 1 });   // Ana acerta de novo
   await espera(120);
   jogadores[2].envia({ t: 'responder', q: 1, opcao: 1 });   // correta
@@ -299,6 +329,15 @@ try {
   host.envia({ t: 'excluirQuiz', id: idTeste });
   await host.ate((cl) => cl.estado.quizzes.length === 2, 'exclusão');
   conferir('exclui do menu', host.estado.quizzes.every((q) => q.id !== idTeste));
+
+  console.log('\nTradução automática');
+  const saudeT = await (await fetch(`${BASE}/api/saude`)).json();
+  conferir('saúde informa estado da tradução', saudeT.traducao === false, String(saudeT.traducao));
+  conferir('host sabe que a tradução está desligada', host.estado.podeTraduzir === false);
+  host.erro = null;
+  host.envia({ t: 'traduzir', idioma: 'es', cartas: QUIZ_TESTE.cartas });
+  await host.ate((cl) => cl.erro === 'sem-traducao', 'aviso de tradução desligada');
+  conferir('traduzir sem chave avisa em vez de quebrar', host.erro === 'sem-traducao');
 
   console.log('\nRemoção pelo apresentador');
   host.envia({ t: 'remover', nome: 'cida' });                // caixa não importa
