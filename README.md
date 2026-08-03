@@ -80,6 +80,29 @@ Anthropic (`claude-opus-5`, saída estruturada por JSON Schema) e devolve as alt
 **na mesma ordem**, para o índice do gabarito continuar valendo. Sem a chave, nada quebra:
 o botão avisa que o recurso está desligado e a tradução manual segue disponível.
 
+## Quantas pessoas aguenta
+
+Medido com jogadores reais por WebSocket (`node teste/carga.mjs <n>`), num container
+modesto — o Railway de produção tende a ir melhor:
+
+| Jogadores | Todos veem a pergunta | Todos veem a revelação | Relógio (5 tiques em 5 s) |
+| --- | --- | --- | --- |
+| 50 | 7 ms | ~230 ms | ✅ |
+| 200 | 137 ms | 715 ms | ✅ |
+| 500 | 474 ms | 740 ms | ✅ |
+| 1000 | 82 ms | 795 ms | ✅ |
+
+Sem limite fixo no código. Na prática, **até algumas centenas roda folgado**; a partir de
+~1000 o que pesa é a entrada em massa (12 s para 1000 pessoas escanearem e entrarem, o que
+na vida real se dilui porque ninguém entra no mesmo milissegundo).
+
+Duas decisões sustentam isso, e desfazê-las derruba a escala:
+
+- **O ranking é ordenado uma vez por transmissão**, não uma vez por jogador. Voltar a
+  chamar `ranking()` dentro de `estadoJogador()` torna o custo quadrático.
+- **A rajada de respostas vira uma transmissão só** (`agendarTransmissao`, 120 ms). Sem
+  isso, 300 pessoas respondendo juntas geram 300 transmissões para 300 pessoas.
+
 ## Trilha sonora
 
 Sintetizada na hora com WebAudio (`public/musica.js`) — não há arquivo de áudio no

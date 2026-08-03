@@ -94,7 +94,7 @@ function base() {
   };
 }
 
-function estadoApresentador() {
+function estadoApresentador(lista = ranking()) {
   const dadas = jogo.respostas.get(jogo.q) || new Map();
   const contagem = [0, 0, 0, 0];
   for (const r of dadas.values()) if (r.opcao >= 0 && r.opcao < 4) contagem[r.opcao]++;
@@ -107,16 +107,16 @@ function estadoApresentador() {
     jogadores: [...jogo.jogadores.values()].map((j) => ({ nome: j.nome, conectado: j.conectado })),
     responderam: dadas.size,
     contagem: jogo.fase === 'revelacao' || jogo.fase === 'placar' ? contagem : null,
-    ranking: ranking().slice(0, 10),
+    ranking: lista.slice(0, 10),
   };
 }
 
-function estadoJogador(token) {
+function estadoJogador(token, lista = ranking(), posicoes = null) {
   const eu = jogo.jogadores.get(token);
   const dadas = jogo.respostas.get(jogo.q) || new Map();
   const minha = dadas.get(token);
-  const lista = ranking();
-  const posicao = lista.findIndex((r) => r.token === token) + 1;
+  const posicao = posicoes ? (posicoes.get(token) || 0)
+                           : lista.findIndex((r) => r.token === token) + 1;
 
   return {
     ...base(),
@@ -138,12 +138,30 @@ let wss;
 
 function transmitir() {
   if (!wss) return;
-  const paraHost = JSON.stringify({ t: 'estado', ...estadoApresentador() });
+  clearTimeout(agendada);
+  agendada = null;
+
+  /* O ranking é o mesmo pra todo mundo: ordena uma vez por transmissão,
+     não uma vez por jogador — senão o custo vira quadrático na sala cheia. */
+  const lista = ranking();
+  const posicoes = new Map(lista.map((r, i) => [r.token, i + 1]));
+  const paraHost = JSON.stringify({ t: 'estado', ...estadoApresentador(lista) });
+
   for (const ws of wss.clients) {
     if (ws.readyState !== ws.OPEN) continue;
     if (ws.papel === 'host') ws.send(paraHost);
-    else if (ws.token) ws.send(JSON.stringify({ t: 'estado', ...estadoJogador(ws.token) }));
+    else if (ws.token) {
+      ws.send(JSON.stringify({ t: 'estado', ...estadoJogador(ws.token, lista, posicoes) }));
+    }
   }
+}
+
+/* Rajada de respostas vira uma transmissão só: sem isso, 300 pessoas
+   respondendo ao mesmo tempo geram 300 transmissões para 300 pessoas. */
+let agendada = null;
+function agendarTransmissao(atraso = 120) {
+  if (agendada) return;
+  agendada = setTimeout(transmitir, atraso);
 }
 
 /* ---------- biblioteca ---------- */
@@ -334,7 +352,7 @@ function responder(token, q, opcao) {
   const ativos = [...jogo.jogadores.values()].filter((j) => j.conectado).length;
   if (ativos > 0 && dadas.size >= ativos) setTimeout(revelar, PAUSA_FIM);
 
-  transmitir();
+  agendarTransmissao();
 }
 
 function entrar(nomeBruto, pinBruto) {
