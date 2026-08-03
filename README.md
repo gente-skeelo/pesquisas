@@ -33,7 +33,8 @@ No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
 3. **Lobby** — **PIN de 6 dígitos** em destaque + QR code (que já leva o PIN embutido) e
    quem já chegou (clique num nome pra remover a pessoa). Cada partida gera um PIN novo.
 4. **Partida** — botão principal (ou barra de espaço) conduz: Revelar → Placar → Próxima.
-   Seletor PT/EN/ES ao vivo no canto.
+   Seletor PT/EN/ES ao vivo no canto — define o idioma do telão e o padrão da sala, mas
+   cada jogador pode escolher o seu no celular (veja **Idiomas**).
 5. **Fim** — na revelação da última pergunta o botão vira **"🏆 Mostrar o pódio"** (sem
    passar pela lista). O pódio é encenado: os três blocos começam como tocos com "?", cada
    lugar é chamado ("3º lugar…"), sobe com sua **noz** de bronze / prata / ouro, o nome
@@ -125,10 +126,16 @@ apresentador já resolve isso.
 
 ## Idiomas
 
-Português, inglês e espanhol, trocados ao vivo pelo apresentador. A interface das duas
-telas vive em dicionários `T` (`public/host.js` e `public/jogador.js`) — `npm run teste`
-roda antes de tudo uma verificação de paridade: se um idioma ficar sem alguma chave, o
-teste falha em vez de a tela quebrar em produção. Pergunta sem tradução cai no português.
+Português, inglês e espanhol, trocados ao vivo. A escolha do apresentador é o **padrão da
+sala**, não uma imposição: cada pessoa tem PT/EN/ES no topo do próprio celular e pode ficar
+num idioma diferente do telão. Quem não escolheu nada acompanha a sala; quem escolheu
+continua no seu mesmo quando o apresentador troca. Dá pra trocar no meio da partida, e a
+preferência fica salva no navegador (`localStorage`), então na próxima sala já entra certo.
+
+A interface das duas telas vive em dicionários `T` (`public/host.js` e `public/jogador.js`)
+— `npm run teste` roda antes de tudo uma verificação de paridade: se um idioma ficar sem
+alguma chave, o teste falha em vez de a tela quebrar em produção. Pergunta sem tradução
+cai no português.
 
 ## Responsividade
 

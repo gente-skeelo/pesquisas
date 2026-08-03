@@ -56,9 +56,10 @@ const jogo = {
 };
 
 const carta = () => (jogo.q >= 0 && jogo.q < jogo.baralho.length ? jogo.baralho[jogo.q] : null);
-const texto = () => {
+/** Texto da carta no idioma pedido; sem tradução, cai no português. */
+const texto = (lang = jogo.idioma) => {
   const c = carta();
-  return c ? c[jogo.idioma] || c.pt : null;   // sem tradução, cai no português
+  return c ? c[lang] || c.pt : null;
 };
 
 function ranking() {
@@ -73,13 +74,14 @@ function restanteMs() {
   return Math.max(0, jogo.abertaEm + c.segundos * 1000 - Date.now());
 }
 
-function base() {
+function base(lang = jogo.idioma) {
   const c = carta();
-  const t = texto();
+  const t = texto(lang);
   const revelando = jogo.fase === 'revelacao' || jogo.fase === 'placar';
   return {
     fase: jogo.fase,
-    idioma: jogo.idioma,
+    idioma: lang,
+    idiomaSala: jogo.idioma,
     quiz: jogo.quizTitulo,
     emoji: jogo.quizEmoji,
     cores: jogo.cores,
@@ -113,13 +115,15 @@ function estadoApresentador(lista = ranking()) {
 
 function estadoJogador(token, lista = ranking(), posicoes = null) {
   const eu = jogo.jogadores.get(token);
+  const meuIdioma = (eu && eu.idioma) || jogo.idioma;   // escolha da pessoa vence a da sala
   const dadas = jogo.respostas.get(jogo.q) || new Map();
   const minha = dadas.get(token);
   const posicao = posicoes ? (posicoes.get(token) || 0)
                            : lista.findIndex((r) => r.token === token) + 1;
 
   return {
-    ...base(),
+    ...base(meuIdioma),
+    proprioIdioma: !!(eu && eu.idioma),  // já escolheu, ou está seguindo a sala?
     curiosidade: '',                     // a curiosidade fica na tela grande
     nome: eu ? eu.nome : '',
     pontos: eu ? eu.pontos : 0,
@@ -355,7 +359,7 @@ function responder(token, q, opcao) {
   agendarTransmissao();
 }
 
-function entrar(nomeBruto, pinBruto) {
+function entrar(nomeBruto, pinBruto, idioma) {
   if (!jogo.pin) return { erro: 'sem-sala' };
   if (String(pinBruto || '').trim() !== jogo.pin) return { erro: 'pin' };
 
@@ -368,7 +372,10 @@ function entrar(nomeBruto, pinBruto) {
   if (repetido) return { erro: 'repetido' };
 
   const token = randomUUID();
-  jogo.jogadores.set(token, { token, nome, pontos: 0, ganho: 0, serie: 0, conectado: true });
+  jogo.jogadores.set(token, {
+    token, nome, pontos: 0, ganho: 0, serie: 0, conectado: true,
+    idioma: IDIOMAS.includes(idioma) ? idioma : null,   // null = acompanha a sala
+  });
   return { token, nome };
 }
 
@@ -491,7 +498,7 @@ wss.on('connection', (ws) => {
 
     /* jogador */
     if (m.t === 'entrar') {
-      const r = entrar(m.nome, m.pin);
+      const r = entrar(m.nome, m.pin, m.idioma);
       if (r.erro) return ws.send(JSON.stringify({ t: 'erro', erro: r.erro }));
       ws.papel = 'jogador';
       ws.token = r.token;
@@ -507,6 +514,15 @@ wss.on('connection', (ws) => {
       ws.token = j.token;
       ws.send(JSON.stringify({ t: 'eu', token: j.token, nome: j.nome }));
       return transmitir();
+    }
+
+    if (m.t === 'meuIdioma' && ws.token) {
+      const j = jogo.jogadores.get(ws.token);
+      if (j) {
+        j.idioma = m.v === 'auto' ? null : (IDIOMAS.includes(m.v) ? m.v : j.idioma);
+        ws.send(JSON.stringify({ t: 'estado', ...estadoJogador(ws.token) }));
+      }
+      return;
     }
 
     if (m.t === 'responder' && ws.token) responder(ws.token, m.q, m.opcao);

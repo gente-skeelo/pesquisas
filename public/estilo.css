@@ -77,6 +77,29 @@ body {
 .pill.on { background: rgba(52, 224, 122, .16); color: var(--skeelo-claro); }
 .icone-noz { width: 1.05em; height: 1.05em; flex: none; display: block; }
 .topo-centro { margin: 0 auto; display: flex; gap: .4rem; }
+
+/* seletor de idioma do próprio jogador, na barra do topo */
+.seletor-idioma {
+  order: 3;
+  margin-left: auto;
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.seletor-idioma button {
+  font: 700 .78rem var(--fonte);
+  color: rgba(255, 255, 255, .72);
+  background: transparent;
+  border: 0;
+  padding: .35rem .6rem;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.seletor-idioma button.on { background: rgba(52, 224, 122, .2); color: var(--skeelo-claro); }
+@media (max-width: 640px) {
+  .seletor-idioma button { padding: .3rem .5rem; font-size: .72rem; }
+}
 .topo-dir { margin-left: auto; font-size: .92rem; color: rgba(255, 255, 255, .72); }
 
 .envelope {

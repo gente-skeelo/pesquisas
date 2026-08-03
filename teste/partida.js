@@ -279,6 +279,30 @@ try {
   await jogadores[0].ate((cl) => cl.estado.idioma === 'es', 'espanhol no jogador');
   conferir('espanhol chega no jogador', jogadores[0].estado.idioma === 'es');
 
+  console.log('\nIdioma escolhido no celular');
+  jogadores[1].envia({ t: 'meuIdioma', v: 'pt' });
+  await jogadores[1].ate((cl) => cl.estado.idioma === 'pt', 'idioma próprio');
+  conferir('jogador escolhe o próprio idioma', jogadores[1].estado.idioma === 'pt');
+  conferir('estado marca a escolha própria', jogadores[1].estado.proprioIdioma === true);
+  conferir('estado ainda informa o idioma da sala', jogadores[1].estado.idiomaSala === 'es');
+  conferir('pergunta vem no idioma da pessoa',
+           jogadores[1].estado.enunciado === 'Segunda pergunta?',
+           jogadores[1].estado.enunciado);
+
+  host.envia({ t: 'idioma', v: 'en' });
+  await jogadores[0].ate((cl) => cl.estado.idioma === 'en', 'sala em inglês');
+  conferir('quem não escolheu segue a sala', jogadores[0].estado.idioma === 'en');
+  conferir('quem escolheu não é arrastado pela sala', jogadores[1].estado.idioma === 'pt',
+           jogadores[1].estado.idioma);
+
+  jogadores[1].envia({ t: 'meuIdioma', v: 'auto' });
+  await jogadores[1].ate((cl) => cl.estado.idioma === 'en', 'volta a seguir a sala');
+  conferir('voltar pro automático segue a sala de novo',
+           jogadores[1].estado.idioma === 'en' && jogadores[1].estado.proprioIdioma === false);
+
+  host.envia({ t: 'idioma', v: 'es' });
+  await host.ate((cl) => cl.estado.idioma === 'es', 'sala de volta ao espanhol');
+
   jogadores[0].envia({ t: 'responder', q: 1, opcao: 1 });   // Ana acerta de novo
   await espera(120);
   jogadores[2].envia({ t: 'responder', q: 1, opcao: 1 });   // correta

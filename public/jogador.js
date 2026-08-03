@@ -113,6 +113,7 @@ let ws = null;
 let token = localStorage.getItem('quiz-token') || '';
 let meuNome = localStorage.getItem('quiz-nome') || '';
 let idioma = 'pt';
+let meuIdioma = localStorage.getItem('quiz-idioma') || '';   // vazio = acompanha a sala
 let ultimaQ = -1;
 let estado = null;
 let festejei = false;
@@ -129,7 +130,10 @@ function conectar() {
 
   ws.onopen = () => {
     $('erro-entrar').textContent = '';
-    if (token) ws.send(JSON.stringify({ t: 'voltar', token }));
+    if (token) {
+      ws.send(JSON.stringify({ t: 'voltar', token }));
+      if (meuIdioma) ws.send(JSON.stringify({ t: 'meuIdioma', v: meuIdioma }));
+    }
   };
 
   ws.onmessage = (ev) => {
@@ -179,6 +183,7 @@ function pintar(e) {
   const t = T[idioma];
 
   document.documentElement.lang = { pt: 'pt-BR', en: 'en', es: 'es' }[idioma] || 'pt-BR';
+  marcarIdioma(e.proprioIdioma ? idioma : '');
   aplicarCores(e.cores);
   $('tit-entrar').textContent = e.quiz ? `${e.emoji || ''} ${e.quiz}`.trim() : 'Quiz do Skee';
   $('sub-entrar').textContent = t.sub;
@@ -283,6 +288,41 @@ function montarOpcoes(e) {
   });
 }
 
+/** Destaca o idioma escolhido; sem escolha própria, segue a sala sem destaque fixo. */
+function marcarIdioma(escolhido) {
+  document.querySelectorAll('#seletor-idioma button').forEach((b) => {
+    b.classList.toggle('on', escolhido ? b.dataset.lang === escolhido : b.dataset.lang === idioma);
+  });
+}
+
+document.querySelectorAll('#seletor-idioma button').forEach((b) => {
+  b.onclick = () => {
+    meuIdioma = b.dataset.lang;
+    localStorage.setItem('quiz-idioma', meuIdioma);
+    marcarIdioma(meuIdioma);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ t: 'meuIdioma', v: meuIdioma }));
+    }
+    if (!token) {                       // ainda na tela de entrada: traduz na hora
+      idioma = meuIdioma;
+      const t = T[idioma];
+      $('sub-entrar').textContent = t.sub;
+      $('rot-pin').textContent = t.rotPin;
+      $('rot-nome').textContent = t.rotNome;
+      $('bt-entrar').textContent = t.entrar;
+    }
+  };
+});
+marcarIdioma(meuIdioma);
+if (meuIdioma && T[meuIdioma]) {         // aplica a escolha guardada antes de conectar
+  idioma = meuIdioma;
+  const t = T[idioma];
+  $('sub-entrar').textContent = t.sub;
+  $('rot-pin').textContent = t.rotPin;
+  $('rot-nome').textContent = t.rotNome;
+  $('bt-entrar').textContent = t.entrar;
+}
+
 $('form-entrar').addEventListener('submit', (ev) => {
   ev.preventDefault();
   const nome = $('nome').value.trim();
@@ -290,7 +330,7 @@ $('form-entrar').addEventListener('submit', (ev) => {
   if (!nome || !pin) return;
   $('bt-entrar').disabled = true;
   $('erro-entrar').textContent = '';
-  ws.send(JSON.stringify({ t: 'entrar', nome, pin }));
+  ws.send(JSON.stringify({ t: 'entrar', nome, pin, idioma: meuIdioma || undefined }));
 });
 
 /* PIN na URL (?pin=123456 ou o QR do apresentador) já vem preenchido */
