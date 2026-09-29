@@ -154,6 +154,41 @@ try {
   conferir('cor inválida cai na paleta padrão', host.quizCheio.cores[0] === '#e8455f', host.quizCheio.cores[0]);
   host.envia({ t: 'excluirQuiz', id: idCorRuim });
   await host.ate((c) => c.estado.quizzes.every((q) => q.id !== idCorRuim), 'limpeza');
+
+  console.log('\nLixeira');
+  conferir('excluir manda pra lixeira', host.estado.lixeira.some((q) => q.id === idCorRuim),
+           JSON.stringify(host.estado.lixeira));
+  conferir('lixeira informa prazo de 30 dias',
+           host.estado.lixeira.find((q) => q.id === idCorRuim).diasRestantes === 30,
+           JSON.stringify(host.estado.lixeira));
+  host.quizCheio = null;
+  host.envia({ t: 'pegarQuiz', id: idCorRuim });
+  await espera(200);
+  conferir('quiz na lixeira não abre pra edição', host.quizCheio === null);
+  host.envia({ t: 'duplicarQuiz', id: idCorRuim });
+  await espera(200);
+  conferir('quiz na lixeira não duplica', host.estado.quizzes.length === 2, `veio ${host.estado.quizzes.length}`);
+
+  host.envia({ t: 'restaurarQuiz', id: idCorRuim });
+  await host.ate((c) => c.estado.quizzes.some((q) => q.id === idCorRuim), 'restauração');
+  conferir('restaurar devolve ao menu', host.estado.quizzes.some((q) => q.titulo === 'Cor ruim'));
+  conferir('restaurar esvazia a lixeira', host.estado.lixeira.length === 0, JSON.stringify(host.estado.lixeira));
+  host.quizCheio = null;
+  host.envia({ t: 'pegarQuiz', id: idCorRuim });
+  await host.ate((c) => c.quizCheio, 'quiz restaurado');
+  conferir('quiz restaurado mantém as cartas', host.quizCheio.cartas.length === 2);
+
+  host.envia({ t: 'excluirDeVez', id: idCorRuim });
+  await espera(200);
+  conferir('excluir de vez exige que esteja na lixeira',
+           host.estado.quizzes.some((q) => q.id === idCorRuim));
+  host.envia({ t: 'excluirQuiz', id: idCorRuim });
+  await host.ate((c) => c.estado.lixeira.some((q) => q.id === idCorRuim), 'de volta à lixeira');
+  host.envia({ t: 'excluirDeVez', id: idCorRuim });
+  await host.ate((c) => c.estado.lixeira.length === 0, 'exclusão definitiva');
+  conferir('excluir de vez some da lixeira e do menu',
+           host.estado.quizzes.every((q) => q.id !== idCorRuim) && host.estado.lixeira.length === 0);
+
   host.quizCheio = null;
   host.envia({ t: 'pegarQuiz', id: idTeste });
   await host.ate((c) => c.quizCheio, 'quiz de volta');
@@ -353,6 +388,7 @@ try {
   host.envia({ t: 'excluirQuiz', id: idTeste });
   await host.ate((cl) => cl.estado.quizzes.length === 2, 'exclusão');
   conferir('exclui do menu', host.estado.quizzes.every((q) => q.id !== idTeste));
+  conferir('excluído fica na lixeira', host.estado.lixeira.some((q) => q.id === idTeste));
 
   const htmlHost = await (await fetch(`${BASE}/host?k=${CHAVE}`)).text();
   conferir('tela do apresentador declara os três idiomas',

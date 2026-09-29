@@ -106,6 +106,7 @@ function estadoApresentador(lista = ranking()) {
     pin: jogo.pin,
     podeTraduzir: traducao.traducaoDisponivel(),
     quizzes: armazem.listar(),
+    lixeira: armazem.listarLixeira(),
     jogadores: [...jogo.jogadores.values()].map((j) => ({ nome: j.nome, conectado: j.conectado })),
     responderam: dadas.size,
     contagem: jogo.fase === 'revelacao' || jogo.fase === 'placar' ? contagem : null,
@@ -487,10 +488,17 @@ wss.on('connection', (ws) => {
           transmitir();
         }
       } else if (m.t === 'excluirQuiz') {
+        // vai pra lixeira; some do menu mas dá pra restaurar por 30 dias
         if (m.id === jogo.quizId && jogo.fase !== 'menu') {
           return ws.send(JSON.stringify({ t: 'erro', erro: 'em-uso' }));
         }
         await armazem.excluir(m.id);
+        transmitir();
+      } else if (m.t === 'restaurarQuiz') {
+        await armazem.restaurar(m.id);
+        transmitir();
+      } else if (m.t === 'excluirDeVez') {
+        await armazem.excluirDeVez(m.id);
         transmitir();
       }
       return;
@@ -556,6 +564,19 @@ setInterval(() => {
 }, 1000);
 
 const persistencia = await armazem.iniciar();
+
+/* a lixeira se esvazia sozinha: no boot e de tempos em tempos */
+async function esvaziarVencidos() {
+  try {
+    const n = await armazem.limparLixeira();
+    if (n) { console.log(`lixeira: ${n} quiz(zes) apagado(s) de vez`); transmitir(); }
+  } catch (err) {
+    console.error('lixeira: falha ao limpar', err.message);
+  }
+}
+await esvaziarVencidos();
+setInterval(esvaziarVencidos, 6 * 60 * 60 * 1000).unref();
+
 servidor.listen(PORTA, () => {
   console.log(
     `quiz no ar em http://localhost:${PORTA}  ·  apresentador em /host?k=${CHAVE_HOST}` +

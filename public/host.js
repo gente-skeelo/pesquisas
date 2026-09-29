@@ -346,7 +346,10 @@ function pintarMenu(e) {
       if (confirm(T[idioma].copiaDe(q.titulo))) enviar({ t: 'duplicarQuiz', id: q.id });
     };
     card.querySelector('.ac-excluir').onclick = () => {
-      if (confirm(`Excluir "${q.titulo}"? Não dá pra desfazer.`)) enviar({ t: 'excluirQuiz', id: q.id });
+      // dois cliques de confirmação: o primeiro explica, o segundo cobra certeza
+      if (!confirm(`Mover "${q.titulo}" para a lixeira?\n\nEle some da central, mas dá pra restaurar em até 30 dias.`)) return;
+      if (!confirm(`Confirma? "${q.titulo}" vai pra lixeira agora.`)) return;
+      enviar({ t: 'excluirQuiz', id: q.id });
     };
     grade.appendChild(card);
   });
@@ -356,6 +359,40 @@ function pintarMenu(e) {
   novo.innerHTML = '<div class="mais">＋</div><div>Novo quiz</div>';
   novo.onclick = () => abrirEditor(null);
   grade.appendChild(novo);
+
+  pintarLixeira(e.lixeira || []);
+}
+
+function pintarLixeira(itens) {
+  const caixa = $('lixeira');
+  const grade = $('grade-lixeira');
+  grade.innerHTML = '';
+  caixa.hidden = !itens.length;
+  $('lixeira-conta').textContent = itens.length;
+  if (!itens.length) { caixa.open = false; return; }
+
+  itens.forEach((q) => {
+    const card = document.createElement('div');
+    card.className = 'card-quiz na-lixeira';
+    card.innerHTML =
+      '<div class="emoji"></div><div class="titulo"></div><div class="discreto"></div>' +
+      '<div class="acoes"><button class="botao ac-restaurar">↩ Restaurar</button>' +
+      '<button class="botao perigo ac-apagar">Excluir de vez</button></div>';
+    card.querySelector('.emoji').textContent = q.emoji;
+    card.querySelector('.titulo').textContent = q.titulo;
+    card.querySelector('.discreto').textContent =
+      q.n + (q.n === 1 ? ' pergunta' : ' perguntas') + ' · some em ' +
+      (q.diasRestantes === 1 ? '1 dia' : q.diasRestantes + ' dias');
+    card.querySelector('.ac-restaurar').onclick = () => enviar({ t: 'restaurarQuiz', id: q.id });
+    card.querySelector('.ac-apagar').onclick = () => {
+      // aqui não tem volta: confirmação + digitar EXCLUIR
+      if (!confirm(`Apagar "${q.titulo}" de vez?\n\nDepois disso não dá mais pra restaurar.`)) return;
+      const digitado = prompt(`Para confirmar, digite EXCLUIR:`);
+      if ((digitado || '').trim().toUpperCase() !== 'EXCLUIR') return;
+      enviar({ t: 'excluirDeVez', id: q.id });
+    };
+    grade.appendChild(card);
+  });
 }
 
 /* ---------- editor ---------- */
