@@ -15,8 +15,13 @@ import { BARALHO } from './baralho.js';
 const DIR = process.env.DADOS_DIR || './dados';
 const ARQ = join(DIR, 'quizzes.json');
 
+const DIAS_NA_LIXEIRA = 30;      // depois disso o quiz some de vez
+
 let pool = null;                 // conexão Postgres, quando houver
 const quizzes = new Map();       // id -> quiz, sempre espelhado em memória
+                                 // (os da lixeira ficam aqui também, com excluidoEm)
+
+const naLixeira = (q) => Boolean(q.excluidoEm);
 
 export async function iniciar() {
   const url = process.env.DATABASE_URL || '';
@@ -50,11 +55,34 @@ export async function iniciar() {
 
 export function listar() {
   return [...quizzes.values()]
+    .filter((q) => !naLixeira(q))
     .sort((a, b) => (b.atualizado || '').localeCompare(a.atualizado || ''))
     .map((q) => ({ id: q.id, titulo: q.titulo, emoji: q.emoji || '🎯', n: q.cartas.length }));
 }
 
-export const pegar = (id) => quizzes.get(id) || null;
+/** Quizzes na lixeira, do excluído mais recente pro mais antigo, com os dias que restam. */
+export function listarLixeira() {
+  const agora = Date.now();
+  return [...quizzes.values()]
+    .filter(naLixeira)
+    .sort((a, b) => b.excluidoEm.localeCompare(a.excluidoEm))
+    .map((q) => ({
+      id: q.id,
+      titulo: q.titulo,
+      emoji: q.emoji || '🎯',
+      n: q.cartas.length,
+      excluidoEm: q.excluidoEm,
+      diasRestantes: Math.max(0, Math.ceil(
+        (Date.parse(q.excluidoEm) + DIAS_NA_LIXEIRA * 86400000 - agora) / 86400000,
+      )),
+    }));
+}
+
+/** Só quizzes ativos: o que está na lixeira não abre, não edita e não duplica. */
+export function pegar(id) {
+  const q = quizzes.get(id);
+  return q && !naLixeira(q) ? q : null;
+}
 
 export async function salvar(bruto) {
   const quiz = {
@@ -65,6 +93,44 @@ export async function salvar(bruto) {
     cartas: bruto.cartas,
     atualizado: new Date().toISOString(),
   };
+  await gravar(quiz);
+  return quiz;
+}
+
+/** Manda pra lixeira: o quiz some do menu, mas dá pra restaurar por 30 dias. */
+export async function excluir(id) {
+  const q = quizzes.get(id);
+  if (!q || naLixeira(q)) return false;
+  await gravar({ ...q, excluidoEm: new Date().toISOString() });
+  return true;
+}
+
+export async function restaurar(id) {
+  const q = quizzes.get(id);
+  if (!q || !naLixeira(q)) return false;
+  const { excluidoEm, ...vivo } = q;
+  await gravar(vivo);
+  return true;
+}
+
+/** Apaga de verdade. Só vale pra quem já está na lixeira. */
+export async function excluirDeVez(id) {
+  const q = quizzes.get(id);
+  if (!q || !naLixeira(q)) return false;
+  await apagar(id);
+  return true;
+}
+
+/** Esvazia o que passou do prazo. Devolve quantos foram embora. */
+export async function limparLixeira(dias = DIAS_NA_LIXEIRA) {
+  const limite = Date.now() - dias * 86400000;
+  const vencidos = [...quizzes.values()]
+    .filter((q) => naLixeira(q) && Date.parse(q.excluidoEm) <= limite);
+  for (const q of vencidos) await apagar(q.id);
+  return vencidos.length;
+}
+
+async function gravar(quiz) {
   quizzes.set(quiz.id, quiz);
   if (pool) {
     await pool.query(
@@ -75,14 +141,12 @@ export async function salvar(bruto) {
   } else {
     gravarArquivo();
   }
-  return quiz;
 }
 
-export async function excluir(id) {
-  if (!quizzes.delete(id)) return false;
+async function apagar(id) {
+  quizzes.delete(id);
   if (pool) await pool.query('DELETE FROM quizzes WHERE id = $1', [id]);
   else gravarArquivo();
-  return true;
 }
 
 function gravarArquivo() {

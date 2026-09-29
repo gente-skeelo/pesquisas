@@ -83,6 +83,25 @@
     .card-novo:hover { background: #f2fdf6; box-shadow: var(--sombra); }
     .card-novo .mais { font-size: 2.4rem; line-height: 1; }
 
+    /* ---------- lixeira ---------- */
+    .lixeira { margin-top: 2.2rem; }
+    .lixeira summary {
+      cursor: pointer; font-family: var(--display); font-weight: 700; font-size: 1.05rem;
+      color: var(--tinta2); list-style: none; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .lixeira summary::-webkit-details-marker { display: none; }
+    .lixeira summary::after { content: '▸'; transition: transform .12s ease; }
+    .lixeira[open] summary::after { transform: rotate(90deg); }
+    .lixeira .conta {
+      background: #fdeaef; color: #c2445f; border-radius: 999px;
+      padding: .1rem .6rem; font-size: .85rem;
+    }
+    .lixeira .grade-quizzes { margin-top: .9rem; }
+    .card-quiz.na-lixeira { background: #fbfbfb; box-shadow: none; }
+    .card-quiz.na-lixeira:hover { transform: none; box-shadow: none; }
+    .card-quiz.na-lixeira .emoji { filter: grayscale(1); opacity: .7; }
+    .card-quiz.na-lixeira .titulo { color: var(--tinta2); }
+
     /* ---------- editor ---------- */
     .ed-cabeca { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
     .ed-cabeca .campo { font-size: 1.05rem; }
@@ -432,6 +451,12 @@
         <p class="discreto" style="margin:0">Escolha um quiz pra apresentar, edite um existente ou crie um novo.</p>
       </div>
       <div class="grade-quizzes" id="grade-quizzes"></div>
+
+      <details class="lixeira" id="lixeira" hidden>
+        <summary>🗑️ Lixeira <span class="conta" id="lixeira-conta"></span></summary>
+        <p class="discreto">Quizzes excluídos ficam aqui por 30 dias. Dá pra restaurar ou apagar de vez.</p>
+        <div class="grade-quizzes" id="grade-lixeira"></div>
+      </details>
     </section>
 
     <!-- editor -->

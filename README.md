@@ -23,7 +23,9 @@ No primeiro boot com a biblioteca vazia, o quiz **Festas Juninas pelo mundo**
 ### Fluxo do apresentador
 
 1. **Central de quizzes** — cards com os quizzes salvos: ▶ Apresentar, Editar, Duplicar,
-   ✕ Excluir, ou ＋ Novo quiz.
+   ✕ Excluir, ou ＋ Novo quiz. Excluir pede confirmação **duas vezes** e manda o quiz pra
+   **Lixeira** (seção no fim da central), de onde dá pra **Restaurar** ou **Excluir de vez**
+   (confirmação + digitar `EXCLUIR`). O que fica 30 dias na lixeira é apagado sozinho.
 2. **Editor** — título, emoji, **paleta das alternativas** (padrão nas cores vivas estilo
    Kahoot; 5 presets ou 4 cores livres,
    com prévia e cor de texto calculada automaticamente pelo contraste) e as perguntas:
